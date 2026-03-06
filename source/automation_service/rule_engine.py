@@ -4,7 +4,7 @@ from kafka import KafkaConsumer
 from persistence_layer import get_db_connection
 
 # --- CONFIGURAZIONE ---
-KAFKA_BROKER = "localhost:9092"
+KAFKA_BROKER = "localhost:29092"
 TOPIC = "mars.telemetry.normalized" # <--- CAMBIATO QUI
 REDIS_HOST = "localhost"
 
