@@ -1,0 +1,40 @@
+services:
+  simulator:
+    image: mars-iot-simulator:multiarch_v1	#carico l'immagine del file tar caricata con skopeo
+    ports:
+      - "8080:8080"		#collego la mia porta fisica a quela del container per il simulatore
+
+
+  kafka:
+    image: apache/kafka:3.7.0
+    ports:		#standard per la porta Kafka
+      - "9092:9092"
+    environment:		#questa parte serve ad avviare Kafka in modalità KRaft
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    healthcheck:	#Ogni 10 secondi esegue un test dentro Kafka chiedendo la lista dei topic.
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5		#se fallisce 5 volte lo considera rotto (non healty)
+
+  ingestion_service:
+    build: 
+      context: ./source/ingestion	#crea il container da zero compilandolo al momento
+    depends_on:	#avvia il codice python quando il simulatore è acceso e solo se Kafka (è healty)
+      simulator:
+        condition: service_started  
+      kafka:
+        condition: service_healthy
+    environment:		#Passa al tuo codice Python l'indirizzo segreto degli altri container. Docker crea una sua rete virtuale privata interna.
+      - SIMULATOR_URL=http://simulator:8080
+      - KAFKA_BROKER=kafka:9092
+    restart: on-failure
