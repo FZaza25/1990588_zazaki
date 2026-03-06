@@ -1,15 +1,14 @@
 services:
   simulator:
-    image: mars-iot-simulator:multiarch_v1	#carico l'immagine del file tar caricata con skopeo
+    image: mars-iot-simulator:multiarch_v1
     ports:
-      - "8080:8080"		#collego la mia porta fisica a quela del container per il simulatore
-
+      - "8080:8080"
 
   kafka:
     image: apache/kafka:3.7.0
-    ports:		#standard per la porta Kafka
+    ports:
       - "9092:9092"
-    environment:		#questa parte serve ad avviare Kafka in modalità KRaft
+    environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
@@ -20,21 +19,45 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-    healthcheck:	#Ogni 10 secondi esegue un test dentro Kafka chiedendo la lista dei topic.
+    healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
       interval: 10s
       timeout: 5s
-      retries: 5		#se fallisce 5 volte lo considera rotto (non healty)
+      retries: 5
 
   ingestion_service:
     build: 
-      context: ./source/ingestion	#crea il container da zero compilandolo al momento
-    depends_on:	#avvia il codice python quando il simulatore è acceso e solo se Kafka (è healty)
+      context: ./source/ingestion
+    depends_on:
       simulator:
         condition: service_started  
       kafka:
         condition: service_healthy
-    environment:		#Passa al tuo codice Python l'indirizzo segreto degli altri container. Docker crea una sua rete virtuale privata interna.
+    environment:
       - SIMULATOR_URL=http://simulator:8080
       - KAFKA_BROKER=kafka:9092
     restart: on-failure
+
+  # --- Servizi di Giulio (SISTEMATI) ---
+  mars_db:
+    image: postgres:15-alpine
+    container_name: mars_postgres
+    environment:
+      POSTGRES_USER: zazaki
+      POSTGRES_PASSWORD: hackathon2026
+      POSTGRES_DB: mars_habitat
+    ports:
+      - "5432:5432"
+    volumes:
+      - mars_db_data:/var/lib/postgresql/data
+      - ./source/automation_service/init.sql:/docker-entrypoint-initdb.d/init.sql # <--- Ho aggiunto lo spazio qui
+
+  state_store:
+    image: redis:7-alpine
+    container_name: mars_redis
+    ports:
+      - "6379:6379"
+
+# --- Definizione Volumi ---
+volumes:
+  mars_db_data:
