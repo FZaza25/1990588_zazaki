@@ -9,6 +9,7 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import i18n from './lang/i18n.js'
 
 const vuetify = createVuetify({
     components,
@@ -36,4 +37,5 @@ const vuetify = createVuetify({
 createApp(App)
     .use(router)   // registra il router
     .use(vuetify)
+    .use(i18n)
     .mount('#app')

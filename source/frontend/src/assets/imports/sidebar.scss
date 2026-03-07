@@ -6,6 +6,21 @@
 
 }
 
+.sidebar-content {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-list {
+  flex: 1 1 auto;
+}
+
+.sidebar-footer {
+  display: flex;
+  margin-top: auto;
+}
+
 .sidebar-logo-wrap {
   width: calc(100% - 40px);
   margin: 20px;

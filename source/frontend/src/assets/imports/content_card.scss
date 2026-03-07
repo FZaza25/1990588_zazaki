@@ -1,0 +1,8 @@
+@use "../variables" as vars;
+
+.content-card {
+  background-color: rgba(vars.$primary,0.9);
+  margin: 40px auto;
+  width: 100% !important;
+  height: 100% !important;
+}
