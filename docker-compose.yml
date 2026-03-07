@@ -55,6 +55,23 @@ services:
       - mars_db_data:/var/lib/postgresql/data
       - ./source/automation_service/init.sql:/docker-entrypoint-initdb.d/init.sql # <--- Ho aggiunto lo spazio qui
 
+  api_gateway:
+    build: ./source/automation_service
+    command: uvicorn api_gateway:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mars_db
+      - state_store
+
+  rule_engine:
+    build: ./source/automation_service
+    command: python rule_engine.py
+    depends_on:
+      - kafka
+      - state_store
+
+          
   state_store:
     image: redis:7-alpine
     container_name: mars_redis
