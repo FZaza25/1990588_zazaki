@@ -3,6 +3,7 @@ import { createI18n } from 'vue-i18n'
 const messages = {
     en: {
         back: 'Back',
+        sensors: 'Sensors',
         login: {
             title: 'Log in',
             subtitle: 'Log in to monitor and control your habitat in real time.',
