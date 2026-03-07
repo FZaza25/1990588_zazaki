@@ -22,6 +22,10 @@
   object-fit: contain;
 }
 
+.log-in-button {
+  border: 2px solid vars.$orange;
+}
+
 
 .login-logo-wrap {
   width: calc(100% - 64px);

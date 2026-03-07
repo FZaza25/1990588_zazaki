@@ -11,7 +11,7 @@
           </div>
           <div class="d-flex justify-center py-8">
             <v-btn
-                class="rounded-lg w-33 bg-background"
+                class="rounded-lg w-33 bg-background log-in-button"
                 variant="text"
                 @click="router.push({ name: 'monitoring' })"
             >
