@@ -1,5 +1,5 @@
 <template>
-  <div class="w-100 h-50 bg-white">
+  <div class="">
     sensors
   </div>
 </template>
