@@ -7,7 +7,7 @@ export default {
     name: 'monitoring',
     redirect: { name: 'indoor_environment' },
     components: {
-        sidebar: () => import('../../../components/common/SideBar.vue'),
+        sidebar: () => import('../../../components/common/Sidebar.vue'),
         header: () => import('../../../components/common/Header.vue'),
         content: () => import('../../../components/common/ContentCard.vue'),
     },

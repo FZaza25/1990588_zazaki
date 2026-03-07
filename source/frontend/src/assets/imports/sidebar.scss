@@ -1,0 +1,29 @@
+@use "../variables" as vars;
+
+.sidebar{
+  height: 100%;
+  background-color: rgba(vars.$primary, 0.9);
+
+}
+
+.sidebar-logo-wrap {
+  width: calc(100% - 40px);
+  margin: 20px;
+  padding: 12px;
+  border-radius: 12px;
+  background-color: rgba(vars.$background, 0.90);
+  display: flex;
+  justify-content: center;
+}
+
+.selected-item{
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.sidebar-logo {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
