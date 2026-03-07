@@ -1,56 +1,62 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
-
-from schemas import SensorState, RuleCreate, RuleResponse
+import redis, json, uvicorn
 from persistence_layer import get_db_connection
-from state_cache import sensor_memory
+import requests
 
-app = FastAPI(title="Mars Automation Service")
+app = FastAPI()
+cache = redis.Redis(host="mars_redis", port=6379, decode_responses=True)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 @app.get("/api/state")
 def get_current_state():
-    return sensor_memory
+    keys = cache.keys("sensor:*")
+    return [json.loads(cache.get(k)) for k in keys if cache.get(k)]
 
-
-@app.get("/api/rules", response_model=List[RuleResponse])
-def get_automation_rules():
+# Accetta sia /api/rules che /api/rules/
+@app.get("/api/rules")
+@app.get("/api/rules/")
+def get_rules():
     conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT * FROM automation_rules ORDER BY created_at DESC")
-        rules = cursor.fetchall()
-        return [dict(rule) for rule in rules]
-    finally:
-        conn.close()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM automation_rules")
+    res = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in res]
 
-@app.post("/api/rules", response_model=RuleResponse)
-def create_rule(rule: RuleCreate):
+@app.post("/api/rules")
+def create_rule(rule: dict):
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cur = conn.cursor()
     try:
-        cursor.execute("""
-            INSERT INTO automation_rules 
-            (sensor_name, operator, threshold_value, threshold_unit, actuator_name, target_state)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            RETURNING *;
-        """, (
-            rule.sensor_name, rule.operator, rule.threshold_value, 
-            rule.threshold_unit, rule.actuator_name, rule.target_state
-        ))
-        new_rule = cursor.fetchone()
+        cur.execute("""
+            INSERT INTO automation_rules (sensor_name, operator, threshold_value, threshold_unit, actuator_name, target_state)
+            VALUES (%s, %s, %s, %s, %s, %s) RETURNING *;
+        """, (rule['sensor_name'], rule['operator'], rule['threshold_value'], rule['threshold_unit'], rule['actuator_name'], rule['target_state']))
+        res = cur.fetchone()
         conn.commit()
-        return dict(new_rule)
+        return dict(res)
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         conn.close()
+
+@app.post("/api/actuators/{name}/dispatch")
+def manual_control(name: str, command: dict):
+    """US-10: Allows the operator to manually override actuator state from dashboard"""
+    state = command.get("state") # Expects {"state": "ON"} or {"state": "OFF"}
+    try:
+        # Forwards the command directly to the simulator
+        res = requests.post(f"http://simulator:8080/api/actuators/{name}", json={"state": state}, timeout=2)
+        if res.status_code == 200:
+            return {"status": "dispatched", "target": name, "state": state}
+        else:
+            raise HTTPException(status_code=res.status_code, detail="Simulator rejected the command")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not reach simulator: {str(e)}")
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

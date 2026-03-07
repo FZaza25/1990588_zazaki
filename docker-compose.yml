@@ -56,8 +56,13 @@ services:
       - ./source/automation_service/init.sql:/docker-entrypoint-initdb.d/init.sql # <--- Ho aggiunto lo spazio qui
 
   api_gateway:
-    build: ./source/automation_service
-    command: uvicorn api_gateway:app --host 0.0.0.0 --port 8000
+    build:
+      context: ./source/automation_service
+      dockerfile: docker_gateway
+    environment:
+      - PYTHONUNBUFFERED=1  
+    container_name: mars_api_gateway
+    command: python -u api_gateway.py # <--- IL SEGRETO PER I LOG
     ports:
       - "8000:8000"
     depends_on:
@@ -65,8 +70,13 @@ services:
       - state_store
 
   rule_engine:
-    build: ./source/automation_service
-    command: python rule_engine.py
+    build:
+      context: ./source/automation_service
+      dockerfile: docker_engine
+    environment:
+      - PYTHONUNBUFFERED=1  
+    container_name: mars_rule_engine
+    command: python -u rule_engine.py # <--- IL SEGRETO PER I LOG
     depends_on:
       - kafka
       - state_store
