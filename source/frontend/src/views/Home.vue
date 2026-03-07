@@ -10,6 +10,7 @@
             <v-btn
                 class="rounded-lg w-33 bg-primary"
                 variant="text"
+                @click="router.push({ name: 'monitoring' })"
             >
               <div class="font-weight-bold">
                 Log in
