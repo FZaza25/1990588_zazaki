@@ -1,0 +1,12 @@
+@use "../variables" as vars;
+
+.utility-card {
+  width: 33%;
+  background-color: vars.$background;
+  border-radius: 8px;
+  height: auto;
+  color: vars.$primary;
+  padding: 16px 60px;
+  border: 3px solid vars.$orange;
+  font-weight: bold;
+}
