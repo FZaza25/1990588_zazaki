@@ -10,7 +10,7 @@
 }
 
 .login-card {
-  background: rgba(vars.$background,0.9);
+  background: rgba(vars.$primary,0.9);
   border-color: rgba(vars.$border,1);
 }
 
@@ -19,6 +19,15 @@
   width: 100%;
   max-width: 220px;
   height: auto;
-  margin: 0 auto;
   object-fit: contain;
+}
+
+
+.login-logo-wrap {
+  width: calc(100% - 64px);
+  margin: 32px;
+  border-radius: 12px;
+  background-color: rgba(vars.$background, 0.90);
+  display: flex;
+  justify-content: center;
 }
