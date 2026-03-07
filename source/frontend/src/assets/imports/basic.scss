@@ -1,0 +1,24 @@
+@use "../variables" as vars;
+
+.v-application.app-background {
+  background: url('/Background.png') center center / cover no-repeat fixed !important;
+}
+
+.v-application.app-background .v-application__wrap,
+.v-application.app-background .app-main {
+  background: transparent;
+}
+
+.login-card {
+  background: rgba(vars.$background,0.9);
+  border-color: rgba(vars.$border,1);
+}
+
+.login-logo {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
