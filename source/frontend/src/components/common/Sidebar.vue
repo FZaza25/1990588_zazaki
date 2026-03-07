@@ -28,7 +28,12 @@
           </div>
         </v-list-item>
       </v-list>
-      <div class="sidebar-footer pa-4 text-white font-weight-bold cursor-pointer border-t border-background" @click="router.push('/')">
+      <div class="sidebar-footer pa-4 text-white font-weight-bold cursor-pointer border-t border-background"
+           @mouseover="hovered = true"
+           @mouseleave="hovered = false"
+           @click="router.push('/')"
+           :class="hovered ?'selected-item':''"
+      >
             <v-icon icon="mdi-step-backward"/>
           {{mdAndDown?'':t('back')}}
       </div>
@@ -51,6 +56,8 @@ const viewportWidth = ref(window.innerWidth)
 const drawerWidth = computed(() => Math.round(viewportWidth.value * 0.20))
 
 const router = useRouter()
+
+const hovered = ref(false)
 
 const {t} = useI18n()
 
