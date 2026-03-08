@@ -1,7 +1,7 @@
 import json, redis, time, sys
 from kafka import KafkaConsumer
 from persistence_layer import get_db_connection
-import requests # Aggiungi questo in alto
+import requests
 
 KAFKA_TOPIC = "mars.telemetry.normalized"
 BROKER = "kafka:9092"
@@ -34,7 +34,7 @@ try:
     )
     print(f"[SYSTEM] CONNECTED.", flush=True)
 except Exception as e:
-    print(f"[ERROR] FALLURE: {e}", flush=True)
+    print(f"[ERROR] FAILURE: {e}", flush=True)
     sys.exit(1)
 
 cache = redis.Redis(host="mars_redis", port=6379, decode_responses=True)
@@ -50,18 +50,28 @@ while True:
             s_id = data.get("sensor_id")
             val = data.get("value")
             
-            # --- 1. LOG GENERALE (Quello che volevi rivedere) ---
-            # Questo stampa SEMPRE ogni dato che arriva
+            # --- 1. LOG GENERALE ---
             print(f"RECEIVED: {s_id} = {val}", flush=True)
             
-            # 2. Scrittura su Redis (Stato attuale per Andrea)
+            # --- 2. GESTIONE STATO (API REST) E WEBSOCKET ---
+            # Per le REST API salviamo lo stato intero con il nome originale
             cache.set(f"sensor:{s_id}", json.dumps(data))
-            cache.publish("mars_telemetry_stream", json.dumps(data))
+            
+            # FILTRO WEBSOCKET: Trasmette solo i dati 'mars/telemetry/...' troncandone l'id
+            if s_id and s_id.startswith("mars/telemetry/"):
+                # Facciamo una copia per non rovinare i dati che vanno al DB
+                stream_data = data.copy()
+                # Tronchiamo la stringa sostituendo il prefisso
+                stream_data['sensor_id'] = s_id.replace("mars/telemetry/", "")
+                
+                # Invia ad Andrea i dati con il nome pulito
+                cache.publish("mars_telemetry_stream", json.dumps(stream_data))
+                
             # Se il valore non è un numero, non possiamo fare confronti matematici
             if not isinstance(val, (int, float)):
                 continue
             
-            # 3. Controllo REGOLE
+            # --- 3. Controllo REGOLE ---
             try:
                 conn = get_db_connection()
                 with conn.cursor() as cur:
@@ -72,7 +82,7 @@ while True:
                         op = rule['operator']
                         threshold = float(rule['threshold_value'])
                         
-                        # Verifica condizione: $val > threshold$ o $val < threshold$
+                        # Verifica condizione: val > threshold o val < threshold, ecc.
                         triggered = False
                         if op == ">" and val > threshold: triggered = True
                         elif op == "<" and val < threshold: triggered = True
@@ -81,7 +91,6 @@ while True:
                         elif op == "==" and val == threshold: triggered = True
                         elif op == "!=" and val != threshold: triggered = True
 
-                        
                         if triggered:
                             print(f"\033[91m  [ALARM] \033[0m {s_id} ACTIVATE {rule['actuator_name']}! ({val} {op} {threshold}) ", flush=True)
                             trigger_actuator(rule['actuator_name'], rule['target_state'])
