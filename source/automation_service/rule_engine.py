@@ -3,7 +3,7 @@ from kafka import KafkaConsumer
 from persistence_layer import get_db_connection
 import requests # Aggiungi questo in alto
 
-TOPIC = "mars.telemetry.normalized"
+KAFKA_TOPIC = "mars.telemetry.normalized"
 BROKER = "kafka:9092"
 SIMULATOR_URL = "http://simulator:8080"
 
@@ -25,7 +25,7 @@ print("[SYSTEM]: INITIATING RULE ENGINE (FULL LOGS)...", flush=True)
 
 try:
     consumer = KafkaConsumer(
-        TOPIC,
+        KAFKA_TOPIC,
         bootstrap_servers=[BROKER],
         value_deserializer=lambda x: json.loads(x.decode('utf-8')),
         auto_offset_reset='latest',
@@ -76,10 +76,17 @@ while True:
                         triggered = False
                         if op == ">" and val > threshold: triggered = True
                         elif op == "<" and val < threshold: triggered = True
+                        elif op == ">=" and val >= threshold: triggered = True
+                        elif op == "<=" and val <= threshold: triggered = True
+                        elif op == "==" and val == threshold: triggered = True
+                        elif op == "!=" and val != threshold: triggered = True
+
                         
                         if triggered:
                             print(f"\033[91m  [ALARM] \033[0m {s_id} ACTIVATE {rule['actuator_name']}! ({val} {op} {threshold}) ", flush=True)
                             trigger_actuator(rule['actuator_name'], rule['target_state'])
+                        else:
+                            print(f"  [EVAL] {s_id}: {val} {op} {threshold} → FALSE (no action)", flush=True)
                 conn.close()
             except Exception as e:
                 print(f"ERROR DB: {e}", flush=True)
