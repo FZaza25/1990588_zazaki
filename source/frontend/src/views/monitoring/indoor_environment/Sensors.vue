@@ -2,12 +2,12 @@
   <div class="title">
     <h2>{{ t('sensors') }}</h2>
     <div class="d-flex flex-column">
-      <div class="d-flex ga-4">
+      <div class="d-flex ga-2">
         <GreenhouseTemp :entries="sensorsData?.sensorsList?.greenhouse_temperature" />
         <Humidity :entries="sensorsData?.sensorsList?.entrance_humidity"/>
         <Co2Hall :entries="sensorsData?.sensorsList?.co2_hall"/>
       </div>
-      <div class="d-flex ga-4 pt-4">
+      <div class="d-flex ga-2 pt-4">
         <CorridorPressure :entries="sensorsData?.sensorsList?.corridor_pressure" />
         <AirQualityPM25 :entries="sensorsData?.sensorsList?.air_quality_pm25"/>
         <AirQualityVoc :entries="sensorsData?.sensorsList?.air_quality_voc"/>

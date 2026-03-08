@@ -5,6 +5,7 @@
         persistent
         no-click-animation
         scrollable
+        scroll-strategy="none"
         content-class="central-modal-content"
         :content-props="{ style: overlayStyle }"
     >
