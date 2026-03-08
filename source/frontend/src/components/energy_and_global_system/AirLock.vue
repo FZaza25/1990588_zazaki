@@ -1,5 +1,5 @@
 <template>
-  <StreamCard :title="entries.sensor_id" :icon="entries.icon" :value="entries.value"/>
+  <StreamCard :title="props.entries.sensor_id" :icon="props.entries.icon" :value="props.entries.value"/>
 </template>
 
 <script setup>

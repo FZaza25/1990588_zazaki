@@ -24,11 +24,18 @@ export class TelemetrySocket {
         }
 
         this.ws.onmessage = (event) => {
+            let data
             try {
-                const data = JSON.parse(event.data)
+                data = JSON.parse(event.data)
+            } catch {
+                this.onError?.(new Error(`Invalid WS payload: ${event.data}`))
+                return
+            }
+
+            try {
                 this.onMessage?.(data)
             } catch (err) {
-                this.onError?.(new Error(`Invalid WS payload: ${event.data}`))
+                this.onError?.(err)
             }
         }
 
@@ -64,5 +71,4 @@ export class TelemetrySocket {
 export function isTelemetryEvent(event) {
     return typeof event?.sensor_id === 'string' && event.sensor_id.length > 0
 }
-
 

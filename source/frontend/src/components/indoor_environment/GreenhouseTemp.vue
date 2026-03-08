@@ -1,13 +1,13 @@
 <template>
-  <UtilityCard :title="entries.sensor_id" :icon="entries.icon" :value="entries.value + ' ' + entries.unit" :openChart="()=>openChart()"/>
+  <UtilityCard :title="props.entries.sensor_id" :icon="props.entries.icon" :value="props.entries.value + ' ' + props.entries.unit" :openChart="()=>openChart()"/>
   <CentralModal ref="openModal">
     <template #header>
       <h1>
-        {{t('sensors_name.'+entries.sensor_id)}}
+        {{t('sensors_name.'+props.entries.sensor_id)}}
       </h1>
     </template>
     <template #content>
-      <LineCharts :labels="chartTime" :values="sensorsData.charts.greenhouse_temperature" :yUnit="entries.unit"/>
+      <LineCharts :labels="chartTime" :values="sensorsData.charts.greenhouse_temperature" :yUnit="props.entries.unit"/>
     </template>
   </CentralModal>
 </template>

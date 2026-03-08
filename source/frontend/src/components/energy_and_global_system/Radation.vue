@@ -1,13 +1,13 @@
 <template>
-  <StreamCard :title="entries.sensor_id" :icon="entries.icon" :value="entries.value + ' ' + entries.unit" :openChart="()=>openChart()"/>
+  <StreamCard :title="props.entries.sensor_id" :icon="props.entries.icon" :value="props.entries.value + ' ' + props.entries.unit" :openChart="()=>openChart()"/>
   <CentralModal ref="openModal">
     <template #header>
       <h1>
-        {{t('sensors_name.'+entries.sensor_id)}}
+        {{t('sensors_name.'+props.entries.sensor_id)}}
       </h1>
     </template>
     <template #content>
-      <BarChart :labels="chartTime" :values="stream.charts.air_quality_pm25" :yUnit="entries.unit"/>
+      <BarChart :labels="chartTime" :values="stream.charts.air_quality_pm25" :yUnit="props.entries.unit"/>
     </template>
   </CentralModal>
 </template>
