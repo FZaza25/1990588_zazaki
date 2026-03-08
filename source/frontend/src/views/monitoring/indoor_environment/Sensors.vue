@@ -3,14 +3,14 @@
     <h2>{{ t('sensors') }}</h2>
     <div class="d-flex flex-column">
       <div class="d-flex ga-4">
-        <GreenhouseTemp :entries="sensorsData?.greenhouse_temperature" />
-        <Humidity :entries="sensorsData?.entrance_humidity"/>
-        <Co2Hall :entries="sensorsData?.co2_hall"/>
+        <GreenhouseTemp :entries="sensorsData?.sensorsList?.greenhouse_temperature" />
+        <Humidity :entries="sensorsData?.sensorsList?.entrance_humidity"/>
+        <Co2Hall :entries="sensorsData?.sensorsList?.co2_hall"/>
       </div>
       <div class="d-flex ga-4 pt-4">
-        <CorridorPressure :entries="sensorsData?.corridor_pressure" />
-        <AirQualityPM25 :entries="sensorsData?.air_quality_pm25"/>
-        <AirQualityVoc :entries="sensorsData?.air_quality_voc"/>
+        <CorridorPressure :entries="sensorsData?.sensorsList?.corridor_pressure" />
+        <AirQualityPM25 :entries="sensorsData?.sensorsList?.air_quality_pm25"/>
+        <AirQualityVoc :entries="sensorsData?.sensorsList?.air_quality_voc"/>
       </div>
     </div>
 
@@ -30,27 +30,9 @@ import CorridorPressure from "../../../components/indoor_environment/CorridorPre
 import AirQualityPM25 from "../../../components/indoor_environment/AirQualityPM25.vue";
 import AirQualityVoc from "../../../components/indoor_environment/AirQualityVoc.vue";
 import {useLoadingStore} from "../../../stores/loading.js";
+import {useSensorsStore} from "../../../stores/sensors.js";
 
-const sensorsData = ref({
-  corridor_pressure: {
-    icon: 'mdi-car-brake-low-pressure'
-  },
-  co2_hall: {
-    icon: 'mdi-molecule-co2'
-  },
-  greenhouse_temperature: {
-    icon: 'mdi-thermometer'
-  },
-  air_quality_pm25: {
-    icon: 'mdi-weather-cloudy'
-  },
-  air_quality_voc: {
-    icon: 'mdi-weather-cloudy'
-  },
-  entrance_humidity: {
-    icon: 'mdi-water-percent'
-  },
-})
+const sensorsData = useSensorsStore()
 
 const {t} = useI18n();
 
@@ -60,10 +42,10 @@ const loaded = useLoadingStore()
 
 const handleData = (data) => {
   data.map(sensor => {
-    if(sensor.sensor_id in sensorsData.value){
-      sensorsData.value[sensor.sensor_id] = {
+    if(sensor.sensor_id in sensorsData.sensorsList){
+      sensorsData.sensorsList[sensor.sensor_id] = {
         ...sensor,
-        icon: sensorsData.value[sensor.sensor_id].icon,
+        icon: sensorsData.sensorsList[sensor.sensor_id].icon,
       };
     }
   })
