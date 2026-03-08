@@ -2,7 +2,7 @@
   <div class="title">
     <h2>{{ t('sensors') }}</h2>
     <div class="d-flex flex-column">
-      <div class="d-flex ga-4">
+      <div class="d-flex ga-2">
         <HydroponicPH :entries="sensorsData?.sensorsList?.hydroponic_ph" />
         <WaterTankLevel :entries="sensorsData?.sensorsList?.water_tank_level"/>
       </div>
@@ -15,7 +15,7 @@
 <script setup>
 
 import {useI18n} from "vue-i18n";
-import {onMounted,onUnmounted, ref} from "vue";
+import {onMounted,onUnmounted} from "vue";
 import { api } from '../../../api/Request.js'
 import HydroponicPH from "../../../components/water_systems/HydroponicPH.vue";
 import WaterTankLevel from "../../../components/water_systems/WaterTankLevel.vue";
@@ -37,9 +37,18 @@ const handleData = (data) => {
         ...sensor,
         icon: sensorsData.sensorsList[sensor.sensor_id].icon,
       };
+      if(sensorsData.charts[sensor.sensor_id].length > 10){
+        sensorsData.charts[sensor.sensor_id].shift()
+        sensorsData.charts[sensor.sensor_id].push(sensor.value)
+      } else {
+        sensorsData.charts[sensor.sensor_id].push(sensor.value)
+      }
     }
   })
-  loaded.loading = true;
+  if(data.length > 0){
+    loaded.loading = true
+  }
+
 }
 
 const get = async () => {

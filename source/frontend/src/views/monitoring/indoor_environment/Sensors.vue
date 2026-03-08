@@ -21,7 +21,7 @@
 <script setup>
 
 import {useI18n} from "vue-i18n";
-import {onMounted,onUnmounted, ref} from "vue";
+import {onMounted,onUnmounted} from "vue";
 import { api } from '../../../api/Request.js'
 import GreenhouseTemp from "../../../components/indoor_environment/GreenhouseTemp.vue";
 import Humidity from "../../../components/indoor_environment/Humidity.vue";
