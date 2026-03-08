@@ -47,7 +47,7 @@ const handleData = (data) => {
         ...sensor,
         icon: sensorsData.sensorsList[sensor.sensor_id].icon,
       };
-      if(sensor.sensor_id !== 'air_quality_voc'){
+      if(sensor.sensor_id !== 'air_quality_voc' && sensor.sensor_id !== 'water_tank_level'){
         if(sensorsData.charts[sensor.sensor_id].length > 10){
           sensorsData.charts[sensor.sensor_id].shift()
           sensorsData.charts[sensor.sensor_id].push(sensor.value)

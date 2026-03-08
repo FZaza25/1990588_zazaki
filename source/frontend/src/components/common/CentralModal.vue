@@ -10,7 +10,7 @@
         :content-props="{ style: overlayStyle }"
     >
       <div>
-        <div class="bg-background border-b cursor-move" @mousedown.prevent="startDrag($event)">
+        <div class="bg-background rounded-t-lg border-b cursor-move" @mousedown.prevent="startDrag($event)">
           <div class="d-flex w-100 justify-space-between py-2 px-4">
             <slot name="header" ></slot>
             <v-icon icon="mdi-close"  size="32" @click="close()"/>
@@ -24,7 +24,7 @@
           </div>
         </div>
         <div class="d-flex w-100">
-          <div class="bg-background w-100 py-5 px-4 border-t">
+          <div class="bg-background rounded-b-lg w-100 py-5 px-4 border-t">
             <slot name="footer"></slot>
           </div>
         </div>

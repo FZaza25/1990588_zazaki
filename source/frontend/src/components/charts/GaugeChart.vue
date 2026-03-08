@@ -37,8 +37,6 @@ const props = defineProps({
   trackColor: { type: String, default: 'rgba(11, 48, 79, 0.15)' }
 })
 
-console.log(props.value)
-
 const clamped = computed(() => {
   const v = Number(props.value)
   if (!Number.isFinite(v)) return props.min
