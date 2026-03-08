@@ -49,8 +49,6 @@ services:
       POSTGRES_USER: zazaki
       POSTGRES_PASSWORD: hackathon2026
       POSTGRES_DB: mars_habitat
-    ports:
-      - "5432:5432"
     volumes:
       - mars_db_data:/var/lib/postgresql/data
       - ./source/automation_service/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -91,6 +89,8 @@ services:
         condition: service_healthy  # ← Aspetta pg_isready
       state_store:
         condition: service_healthy  # ← Aspetta redis-cli ping
+      simulator:                    
+        condition: service_started  
 
   rule_engine:
     build:
@@ -106,6 +106,9 @@ services:
         condition: service_healthy  
       state_store:
         condition: service_healthy  
+      simulator:                    
+        condition: service_started  
 
 volumes:
   mars_db_data:
+  
