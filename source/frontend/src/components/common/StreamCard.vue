@@ -9,7 +9,7 @@
       <div class="d-flex justify-center text-size-large">
         <div  v-if="loaded.loading" class="d-flex justify-lg-space-between justify-center w-100 align-center">
           <h1>{{props.value}}</h1>
-          <v-icon icon="mdi-chart-areaspline" @click="props.openChart" class="icon-hover ml-2" size="40"/>
+          <v-icon v-if="props.openChart" icon="mdi-chart-areaspline" @click="props.openChart" class="icon-hover ml-2" size="40"/>
         </div>
 
         <v-progress-circular indeterminate color="primary" v-else/>
@@ -32,7 +32,10 @@ const props = defineProps({
   title: String,
   icon: String,
   value: String,
-  openChart: Function,
+  openChart: {
+    type: Function,
+    default: null
+  }
 })
 
 </script>

@@ -12,7 +12,7 @@
         <PowerConsumption :entries="stream?.streamsList?.power_consumption"/>
         <ThermalLoop :entries="stream?.streamsList?.thermal_loop"/>
       </div>
-      <div class="d-flex ga-2 pt-4">
+      <div class="d-flex mr-7 pt-4">
         <AirLock :entries="stream?.streamsList?.airlock"/>
       </div>
     </div>
@@ -57,6 +57,17 @@ onMounted(() => {
         ...stream.streamsList[evt.sensor_id],
         ...evt,
         icon: stream.streamsList[evt.sensor_id].icon,
+      }
+
+      if(evt.sensor_id !== 'life_support'){
+        if(stream.charts[evt.sensor_id].length > 10){
+          stream.charts[evt.sensor_id].shift()
+          stream.charts[evt.sensor_id].push(evt.value)
+        } else {
+          stream.charts[sensor.sensor_id].push(evt.value)
+        }
+      } else {
+        stream.charts[sensor.sensor_id] = Number(evt.value)
       }
 
       // const n = Number(evt.value)
