@@ -49,8 +49,6 @@ services:
       POSTGRES_USER: zazaki
       POSTGRES_PASSWORD: hackathon2026
       POSTGRES_DB: mars_habitat
-    ports:
-      - "5432:5432"
     volumes:
       - mars_db_data:/var/lib/postgresql/data
       - ./source/automation_service/init.sql:/docker-entrypoint-initdb.d/init.sql
