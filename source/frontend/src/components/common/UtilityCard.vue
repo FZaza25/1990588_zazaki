@@ -7,7 +7,11 @@
 
       </div>
       <div class="d-flex justify-center text-size-large">
-        <h1 v-if="loaded.loading">{{props.value}}</h1>
+        <div  v-if="loaded.loading" class="d-flex justify-lg-space-between justify-center w-100 align-center">
+          <h1>{{props.value}}</h1>
+          <v-icon icon="mdi-chart-areaspline" class="icon-hover ml-2" size="40"/>
+        </div>
+
         <v-progress-circular indeterminate color="primary" v-else/>
       </div>
     </div>

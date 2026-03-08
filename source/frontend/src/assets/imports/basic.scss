@@ -26,6 +26,15 @@
   border: 2px solid vars.$orange;
 }
 
+.icon-hover{
+  color: vars.$primary;
+  cursor: pointer;
+
+  &:hover {
+    color: vars.$orange;
+  }
+}
+
 
 .login-logo-wrap {
   width: calc(100% - 64px);
