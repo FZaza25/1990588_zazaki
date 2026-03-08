@@ -56,7 +56,7 @@ while True:
             
             # 2. Scrittura su Redis (Stato attuale per Andrea)
             cache.set(f"sensor:{s_id}", json.dumps(data))
-            
+            cache.publish("mars_telemetry_stream", json.dumps(data))
             # Se il valore non è un numero, non possiamo fare confronti matematici
             if not isinstance(val, (int, float)):
                 continue

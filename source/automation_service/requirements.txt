@@ -1,6 +1,7 @@
 fastapi
-uvicorn
+uvicorn[standard]
+websockets
 kafka-python
 redis
-psycopg2-binary
 requests
+psycopg2-binary
