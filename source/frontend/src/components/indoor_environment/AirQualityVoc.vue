@@ -7,7 +7,7 @@
       </h1>
     </template>
     <template #content>
-      <LineCharts :labels="chartTime" :values="sensorsData.charts.hydroponic_ph" :yUnit="entries.unit"/>
+      <GaugeChart :value="sensorsData.charts.air_quality_voc" :min="400" :max="1200" :unit="entries.unit"/>
     </template>
   </CentralModal>
 </template>
@@ -15,16 +15,16 @@
 <script setup>
 
 import UtilityCard from "../common/UtilityCard.vue";
-import {chartTime} from "../../data/ChartFunction.js";
 import CentralModal from "../common/CentralModal.vue";
-import LineCharts from "../charts/LineCharts.vue";
 import {ref} from "vue";
 import {useSensorsStore} from "../../stores/sensors.js";
 import {useI18n} from "vue-i18n";
+import GaugeChart from "../charts/GaugeChart.vue";
 
 const openModal = ref(null)
 
 const sensorsData = useSensorsStore()
+
 
 const {t} = useI18n();
 

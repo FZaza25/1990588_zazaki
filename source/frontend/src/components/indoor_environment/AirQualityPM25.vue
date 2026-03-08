@@ -1,5 +1,5 @@
 <template>
-  <UtilityCard :title="entries.sensor_id" :icon="entries.icon" :value="entries.value + ' ' + entries.unit"/>
+  <UtilityCard :title="entries.sensor_id" :icon="entries.icon" :value="entries.value + ' ' + entries.unit" :openChart="()=>openChart()"/>
   <CentralModal ref="openModal">
     <template #header>
       <h1>
@@ -7,7 +7,7 @@
       </h1>
     </template>
     <template #content>
-      <LineCharts :labels="chartTime" :values="sensorsData.charts.corridor_pressure" :yUnit="entries.unit"/>
+      <BarChart :labels="chartTime" :values="sensorsData.charts.air_quality_pm25" :yUnit="entries.unit"/>
     </template>
   </CentralModal>
 </template>
@@ -17,10 +17,10 @@
 import UtilityCard from "../common/UtilityCard.vue";
 import {chartTime} from "../../data/ChartFunction.js";
 import CentralModal from "../common/CentralModal.vue";
-import LineCharts from "../charts/LineCharts.vue";
 import {ref} from "vue";
 import {useSensorsStore} from "../../stores/sensors.js";
 import {useI18n} from "vue-i18n";
+import BarChart from "../charts/BarChart.vue";
 
 const openModal = ref(null)
 

@@ -33,7 +33,7 @@ export const useSensorsStore = defineStore('sensors', {
             co2_hall: [],
             greenhouse_temperature: [],
             air_quality_pm25: [],
-            air_quality_voc: [],
+            air_quality_voc: null,
             entrance_humidity: [],
             hydroponic_ph: [],
             water_tank_level: []
