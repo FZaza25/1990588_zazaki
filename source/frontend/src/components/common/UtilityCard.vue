@@ -7,7 +7,8 @@
 
       </div>
       <div class="d-flex justify-center text-size-large">
-        <h1>{{props.value}}</h1>
+        <h1 v-if="loaded.loading">{{props.value}}</h1>
+        <v-progress-circular indeterminate color="primary" v-else/>
       </div>
     </div>
 
@@ -17,8 +18,11 @@
 <script setup>
 
 import {useI18n} from "vue-i18n";
+import {useLoadingStore} from "../../stores/loading.js";
 
 const {t} = useI18n();
+
+const loaded = useLoadingStore()
 
 const props = defineProps({
   title: String,

@@ -19,6 +19,7 @@ import {onMounted,onUnmounted, ref} from "vue";
 import { api } from '../../../api/Request.js'
 import HydroponicPH from "../../../components/water_systems/HydroponicPH.vue";
 import WaterTankLevel from "../../../components/water_systems/WaterTankLevel.vue";
+import {useLoadingStore} from "../../../stores/loading.js";
 
 const sensorsData = ref({
   hydroponic_ph: {
@@ -28,6 +29,8 @@ const sensorsData = ref({
     icon: 'mdi-chart-waterfall'
   }
 })
+
+const loaded = useLoadingStore()
 
 const {t} = useI18n();
 
@@ -42,7 +45,7 @@ const handleData = (data) => {
       };
     }
   })
-  console.log(sensorsData.value)
+  loaded.loading = true;
 }
 
 const get = async () => {

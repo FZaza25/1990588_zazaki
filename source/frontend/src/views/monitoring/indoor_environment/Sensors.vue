@@ -29,6 +29,7 @@ import Co2Hall from "../../../components/indoor_environment/Co2Hall.vue";
 import CorridorPressure from "../../../components/indoor_environment/CorridorPressure.vue";
 import AirQualityPM25 from "../../../components/indoor_environment/AirQualityPM25.vue";
 import AirQualityVoc from "../../../components/indoor_environment/AirQualityVoc.vue";
+import {useLoadingStore} from "../../../stores/loading.js";
 
 const sensorsData = ref({
   corridor_pressure: {
@@ -55,6 +56,8 @@ const {t} = useI18n();
 
 let intervalId
 
+const loaded = useLoadingStore()
+
 const handleData = (data) => {
   data.map(sensor => {
     if(sensor.sensor_id in sensorsData.value){
@@ -64,7 +67,7 @@ const handleData = (data) => {
       };
     }
   })
-  console.log(sensorsData.value)
+  loaded.loading = true
 }
 
 const get = async () => {
