@@ -10,9 +10,9 @@
     >
       <div>
         <div class="bg-background border-b cursor-move" @mousedown.prevent="startDrag($event)">
-          <div class="d-flex w-100 justify-space-between py-5 px-4">
+          <div class="d-flex w-100 justify-space-between py-2 px-4">
             <slot name="header" ></slot>
-            <v-icon icon="X"  size="24" @click="close()"/>
+            <v-icon icon="mdi-close"  size="32" @click="close()"/>
           </div>
 
         </div>

@@ -17,6 +17,8 @@ import {
   LinearScale
 } from 'chart.js'
 
+import {computed} from 'vue'
+
 ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale)
 
 const props = defineProps({
@@ -24,18 +26,19 @@ const props = defineProps({
   values: { type: Array, default: () => [] }
 })
 
-const data = {
-  labels: props.labels,
+
+const data = computed(() => ({
+  labels: [...props.labels],
   datasets: [
     {
       label: 'Telemetry',
-      data: props.values,
+      data: [...props.values],
       borderColor: '#0B304F',
       backgroundColor: 'rgba(11,48,79,0.2)',
       tension: 0.3
     }
   ]
-}
+}))
 
 const options = {
   responsive: true,

@@ -27,6 +27,16 @@ export const useSensorsStore = defineStore('sensors', {
             water_tank_level: {
                 icon: 'mdi-chart-waterfall'
             }
+        },
+        charts: {
+            corridor_pressure: [],
+            co2_hall: [],
+            greenhouse_temperature: [],
+            air_quality_pm25: [],
+            air_quality_voc: [],
+            entrance_humidity: [],
+            hydroponic_ph: [],
+            water_tank_level: []
         }
     }),
     persist: true

@@ -47,9 +47,18 @@ const handleData = (data) => {
         ...sensor,
         icon: sensorsData.sensorsList[sensor.sensor_id].icon,
       };
+      if(sensorsData.charts[sensor.sensor_id].length >= 10){
+        sensorsData.charts[sensor.sensor_id].shift()
+        sensorsData.charts[sensor.sensor_id].push(sensor.value)
+      } else {
+        sensorsData.charts[sensor.sensor_id].push(sensor.value)
+      }
     }
   })
-  loaded.loading = true
+  if(data.length > 0){
+    loaded.loading = true
+  }
+
 }
 
 const get = async () => {
