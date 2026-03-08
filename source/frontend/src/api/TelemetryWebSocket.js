@@ -1,3 +1,4 @@
+
 const WS_URL = 'ws://localhost:8000/ws/telemetry'
 
 export class TelemetrySocket {
@@ -61,6 +62,7 @@ export class TelemetrySocket {
 }
 
 export function isTelemetryEvent(event) {
-    return typeof event?.sensor_id === 'string' && event.sensor_id.startsWith('mars/telemetry/')
+    return typeof event?.sensor_id === 'string' && event.sensor_id.length > 0
 }
+
 
