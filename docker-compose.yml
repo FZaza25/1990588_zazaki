@@ -53,41 +53,59 @@ services:
       - "5432:5432"
     volumes:
       - mars_db_data:/var/lib/postgresql/data
-      - ./source/automation_service/init.sql:/docker-entrypoint-initdb.d/init.sql # <--- Ho aggiunto lo spazio qui
+      - ./source/automation_service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    #  Healthcheck per PostgreSQL
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zazaki -d mars_habitat"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s  # Dà 10 secondi di grazia prima di iniziare i check
+
+  state_store:
+    image: redis:7-alpine
+    container_name: mars_redis
+    ports:
+      - "6379:6379"
+    #  Healthcheck per Redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+      start_period: 5s  # Dà 5 secondi di grazia
 
   api_gateway:
     build:
       context: ./source/automation_service
       dockerfile: docker_gateway
     environment:
-      - PYTHONUNBUFFERED=1  
+      - PYTHONUNBUFFERED=1
     container_name: mars_api_gateway
-    command: python -u api_gateway.py # <--- IL SEGRETO PER I LOG
+    command: python -u api_gateway.py
     ports:
       - "8000:8000"
+    # Aspetta che i servizi siano HEALTHY
     depends_on:
-      - mars_db
-      - state_store
+      mars_db:
+        condition: service_healthy  # ← Aspetta pg_isready
+      state_store:
+        condition: service_healthy  # ← Aspetta redis-cli ping
 
   rule_engine:
     build:
       context: ./source/automation_service
       dockerfile: docker_engine
     environment:
-      - PYTHONUNBUFFERED=1  
+      - PYTHONUNBUFFERED=1
     container_name: mars_rule_engine
-    command: python -u rule_engine.py # <--- IL SEGRETO PER I LOG
+    command: python -u rule_engine.py
+    # Aspetta che i servizi siano HEALTHY
     depends_on:
-      - kafka
-      - state_store
+      kafka:
+        condition: service_healthy  
+      state_store:
+        condition: service_healthy  
 
-          
-  state_store:
-    image: redis:7-alpine
-    container_name: mars_redis
-    ports:
-      - "6379:6379"
-
-# --- Definizione Volumi ---
 volumes:
   mars_db_data:
