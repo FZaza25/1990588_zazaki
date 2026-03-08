@@ -91,6 +91,8 @@ services:
         condition: service_healthy  # ← Aspetta pg_isready
       state_store:
         condition: service_healthy  # ← Aspetta redis-cli ping
+      simulator:                    
+        condition: service_started  
 
   rule_engine:
     build:
@@ -106,6 +108,8 @@ services:
         condition: service_healthy  
       state_store:
         condition: service_healthy  
+      simulator:                    
+        condition: service_started  
 
 volumes:
   mars_db_data:
