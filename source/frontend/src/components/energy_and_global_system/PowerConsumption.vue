@@ -7,7 +7,7 @@
       </h1>
     </template>
     <template #content>
-      <BarChart :labels="chartTime" :values="stream.charts.air_quality_pm25" :yUnit="props.entries.unit"/>
+      <AreaChart :labels="chartTime" :values="stream.charts.power_consumption" :yUnit="props.entries.unit"/>
     </template>
   </CentralModal>
 </template>
@@ -21,6 +21,7 @@ import {useI18n} from "vue-i18n";
 import BarChart from "../charts/BarChart.vue";
 import {useStreamsStore} from "../../stores/streams.js";
 import StreamCard from "../common/StreamCard.vue";
+import AreaChart from "../charts/AreaChart.vue";
 
 const openModal = ref(null)
 

@@ -7,7 +7,7 @@
       </h1>
     </template>
     <template #content>
-      <BarChart :labels="chartTime" :values="stream.charts.thermal_loop" :yUnit="props.entries.unit"/>
+      <LineCharts :labels="chartTime" :values="stream.charts.thermal_loop" :yUnit="props.entries.unit"/>
     </template>
   </CentralModal>
 </template>
@@ -21,6 +21,7 @@ import {useI18n} from "vue-i18n";
 import BarChart from "../charts/BarChart.vue";
 import {useStreamsStore} from "../../stores/streams.js";
 import StreamCard from "../common/StreamCard.vue";
+import LineCharts from "../charts/LineCharts.vue";
 
 const openModal = ref(null)
 
