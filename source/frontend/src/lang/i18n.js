@@ -4,6 +4,16 @@ const messages = {
     en: {
         back: 'Back',
         sensors: 'Sensors',
+        stream: 'Stream',
+        stream_name: {
+            solar_array: 'Solar array',
+            radiation: 'Radiation',
+            life_support: 'Life support',
+            thermal_loop: 'Thermal loop',
+            power_bus: 'Power bus',
+            power_consumption: 'Power consumption',
+            airlock: 'Airlock',
+        },
         sensors_name: {
             corridor_pressure: 'Corridor Pressure',
             co2_hall: 'Co2 Hall',
