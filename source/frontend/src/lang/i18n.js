@@ -4,6 +4,16 @@ const messages = {
     en: {
         back: 'Back',
         sensors: 'Sensors',
+        sensors_name: {
+            corridor_pressure: 'Corridor Pressure',
+            co2_hall: 'Co2 Hall',
+            greenhouse_temperature: 'Greenhouse Temperature',
+            air_quality_pm25: 'Air Quality pm25',
+            air_quality_voc: 'Air Quality voc',
+            entrance_humidity: 'Entrance Humidity',
+            water_tank_level: 'Water Tank Level',
+            hydroponic_ph: 'Hydroponic Ph',
+        },
         login: {
             title: 'Log in',
             subtitle: 'Log in to monitor and control your habitat in real time.',

@@ -2,11 +2,12 @@
 
 .utility-card {
   width: 33%;
+  min-width: 100px;
   background-color: vars.$background;
   border-radius: 8px;
   height: auto;
   color: vars.$primary;
-  padding: 16px 60px;
+  padding: 16px 30px;
   border: 3px solid vars.$orange;
   font-weight: bold;
 }
