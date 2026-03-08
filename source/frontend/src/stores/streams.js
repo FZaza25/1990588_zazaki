@@ -27,7 +27,7 @@ export const useStreamsStore = defineStore('streams', {
         },
         charts: {
             solar_array: [],
-            life_support: [],
+            life_support: null,
             radiation: [],
             thermal_loop: [],
             power_bus: [],

@@ -59,20 +59,17 @@ onMounted(() => {
         icon: stream.streamsList[evt.sensor_id].icon,
       }
 
-      const n = Number(evt.value)
-      if (!Number.isFinite(n)) return
-
-      if (stream.charts[evt.sensor_id].length > 10) {
-        stream.charts[evt.sensor_id].shift()
+      if(evt.sensor_id !== 'life_support'){
+        if(stream.charts[evt.sensor_id].length > 10){
+          stream.charts[evt.sensor_id].shift()
+          stream.charts[evt.sensor_id].push(evt.value)
+        } else {
+          stream.charts[evt.sensor_id].push(evt.value)
+        }
+      } else {
+        stream.charts[evt.sensor_id] = Number(evt.value)
       }
-      stream.charts[evt.sensor_id].push(n)
 
-      // const n = Number(evt.value)
-      // if (Number.isFinite(n)) {
-      //   if (!stream.charts[evt.sensor_id]) stream.charts[evt.sensor_id] = []
-      //   stream.charts[evt.sensor_id].push(n)
-      //   if (stream.charts[evt.sensor_id].length > 20) stream.charts[evt.sensor_id].shift()
-      // }
     }
 
   })

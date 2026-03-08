@@ -3,24 +3,23 @@
   <CentralModal ref="openModal">
     <template #header>
       <h1>
-        {{t('sensors_name.'+props.entries.sensor_id)}}
+        {{t('stream_name.'+props.entries.sensor_id)}}
       </h1>
     </template>
     <template #content>
-      <BarChart :labels="chartTime" :values="stream.charts.air_quality_pm25" :yUnit="props.entries.unit"/>
+      <GaugeChart :value="stream.charts.life_support" :min="0" :max="100" :unit="props.entries.unit"/>
     </template>
   </CentralModal>
 </template>
 
 <script setup>
 
-import {chartTime} from "../../data/ChartFunction.js";
 import CentralModal from "../common/CentralModal.vue";
 import {ref} from "vue";
 import {useI18n} from "vue-i18n";
-import BarChart from "../charts/BarChart.vue";
 import {useStreamsStore} from "../../stores/streams.js";
 import StreamCard from "../common/StreamCard.vue";
+import GaugeChart from "../charts/GaugeChart.vue";
 
 const openModal = ref(null)
 

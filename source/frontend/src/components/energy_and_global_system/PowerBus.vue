@@ -3,7 +3,7 @@
   <CentralModal ref="openModal">
     <template #header>
       <h1>
-        {{t('sensors_name.'+props.entries.sensor_id)}}
+        {{t('stream_name.'+props.entries.sensor_id)}}
       </h1>
     </template>
     <template #content>

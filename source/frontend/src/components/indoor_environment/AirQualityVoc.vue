@@ -7,7 +7,7 @@
       </h1>
     </template>
     <template #content>
-      <GaugeChart :value="sensorsData.charts.air_quality_voc" :min="400" :max="1200" :unit="props.entries.unit"/>
+      <GaugeChart :value="sensorsData.charts.life_support" :min="400" :max="1200" :unit="props.entries.unit"/>
     </template>
   </CentralModal>
 </template>
