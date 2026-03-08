@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import redis, json, uvicorn, asyncio
 from persistence_layer import get_db_connection
 import requests
+from datetime import datetime  
 
 app = FastAPI()
 
@@ -16,13 +17,13 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# --- 1. CURRENT STATE (REST) ---
+# --- 1. CURRENT STATE (REST) US-05 + US-10 ---
 @app.get("/api/state")
 def get_current_state():
     keys = cache.keys("sensor:*")
     return [json.loads(cache.get(k)) for k in sorted(keys) if cache.get(k)]
 
-# --- 2. LIVE TELEMETRY (WEBSOCKET) ---
+# --- 2. LIVE TELEMETRY (WEBSOCKET) US-10 ---
 @app.websocket("/ws/telemetry")
 async def websocket_telemetry(websocket: WebSocket):
     await websocket.accept()
@@ -66,6 +67,12 @@ def create_rule(rule: dict):
         """, (rule['sensor_name'], rule['operator'], rule['threshold_value'], rule['threshold_unit'], rule['actuator_name'], rule['target_state']))
         res = cur.fetchone()
         conn.commit()
+        
+        cache.publish("rules_update", json.dumps({
+            "action": "created", 
+            "rule": dict(res)
+        }))
+        
         return dict(res)
     except Exception as e:
         conn.rollback()
@@ -74,18 +81,60 @@ def create_rule(rule: dict):
     finally:
         conn.close()
 
-# --- 4. ACTUATOR CONTROL (HTTP DISPATCH) ---
+
+# ============================================================
+# GET /api/actuators (mancante - US-11, US-13)
+# ============================================================
+@app.get("/api/actuators")
+def get_actuators():
+    """
+    US-11, US-13: Actuator Status Monitor
+    Dashboard deve poter leggere stato attuale di tutti gli attuatori
+    """
+    try:
+        response = requests.get("http://simulator:8080/api/actuators", timeout=3)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"ERROR: Failed to fetch actuators from simulator: {e}")
+        raise HTTPException(status_code=502, detail="Failed to communicate with simulator")
+        
+
+
+# --- 4. ACTUATOR CONTROL (HTTP DISPATCH) Validazione + Redis publish in manual_control ---
 @app.post("/api/actuators/{name}/dispatch")
 def manual_control(name: str, command: dict):
+    """
+    US-12: Manual Actuator Control - con validazione e notifica realtime
+    """
     state = command.get("state")
+    
+    # ← AGGIUNGO validazione input
+    if state not in ["ON", "OFF"]:
+        raise HTTPException(status_code=400, detail="State must be 'ON' or 'OFF'")
+    
     try:
-        # Forwarding command to the simulator service
-        requests.post(f"http://simulator:8080/api/actuators/{name}", json={"state": state}, timeout=2)
+        response = requests.post(
+            f"http://simulator:8080/api/actuators/{name}", 
+            json={"state": state}, 
+            timeout=2
+        )
+        response.raise_for_status()  # ← AGGIUNGO check HTTP status
+        
         print(f"INFO: Command '{state}' dispatched to actuator '{name}'.")
+        
+        # ← AGGIUNGO notifica realtime su Redis per frontend
+        cache.publish("actuator_update", json.dumps({
+            "actuator": name,
+            "state": state,
+            "timestamp": datetime.utcnow().isoformat()
+        }))
+        
         return {"status": "dispatched", "target": name, "state": state}
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         print(f"ERROR: Actuator dispatch failed for '{name}': {e}")
-        raise HTTPException(status_code=500, detail="Failed to communicate with simulator.")
+        raise HTTPException(status_code=502, detail="Failed to communicate with simulator.")
+
 
 @app.delete("/api/rules/{rule_id}")
 def delete_rule(rule_id: int):
@@ -99,12 +148,121 @@ def delete_rule(rule_id: int):
             raise HTTPException(status_code=404, detail="Rule not found")
         
         conn.commit()
+        
+        # ← AGGIUNGO notifica realtime
+        cache.publish("rules_update", json.dumps({
+            "action": "deleted", 
+            "rule_id": rule_id
+        }))
+        
         return {"status": "deleted", "rule": deleted_rule}  # ✓ Non serve dict() con RealDictCursor
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to delete rule: {e}")
     finally:
         conn.close()
+
+@app.patch("/api/rules/{rule_id}")
+def update_rule(rule_id: int, rule: dict):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT * FROM automation_rules WHERE id = %s;", (rule_id,))
+        existing_rule = cur.fetchone()
+
+        if not existing_rule:
+            raise HTTPException(status_code=404, detail="Rule not found")
+
+        updated_rule = {
+            "sensor_name": rule.get("sensor_name", existing_rule["sensor_name"]),
+            "operator": rule.get("operator", existing_rule["operator"]),
+            "threshold_value": rule.get("threshold_value", existing_rule["threshold_value"]),
+            "threshold_unit": rule.get("threshold_unit", existing_rule["threshold_unit"]),
+            "actuator_name": rule.get("actuator_name", existing_rule["actuator_name"]),
+            "target_state": rule.get("target_state", existing_rule["target_state"]),
+        }
+
+        cur.execute("""
+            UPDATE automation_rules
+            SET sensor_name = %s,
+                operator = %s,
+                threshold_value = %s,
+                threshold_unit = %s,
+                actuator_name = %s,
+                target_state = %s
+            WHERE id = %s
+            RETURNING *;
+        """, (
+            updated_rule["sensor_name"],
+            updated_rule["operator"],
+            updated_rule["threshold_value"],
+            updated_rule["threshold_unit"],
+            updated_rule["actuator_name"],
+            updated_rule["target_state"],
+            rule_id
+        ))
+
+        res = cur.fetchone()
+        conn.commit()
+        
+        # ← AGGIUNGO notifica realtime
+        cache.publish("rules_update", json.dumps({
+            "action": "updated", 
+            "rule": dict(res)
+        }))
+        
+        return res
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update rule: {e}")
+    finally:
+        conn.close()
+
+
+# ============================================================
+# WebSocket /ws/rules (US-07 tabella realtime)
+# ============================================================
+@app.websocket("/ws/rules")
+async def websocket_rules(websocket: WebSocket):
+    """
+    WebSocket per aggiornamenti realtime tabella regole
+    Frontend riceve notifiche su create/update/delete senza polling
+    """
+    await websocket.accept()
+    print("INFO: WebSocket rules connection established.")
+    
+    pubsub = cache.pubsub()
+    pubsub.subscribe("rules_update")
+    
+    try:
+        for message in pubsub.listen():
+            if message['type'] == 'message':
+                await websocket.send_text(message['data'])
+            await asyncio.sleep(0.01)
+    except WebSocketDisconnect:
+        print("INFO: WebSocket rules client disconnected.")
+    except Exception as e:
+        print(f"ERROR: Unexpected WebSocket error on rules channel: {e}")
+    finally:
+        pubsub.unsubscribe("rules_update")
+        print("INFO: Unsubscribed from rules update stream.")
+
+# ============================================================
+#Health check endpoint
+# ============================================================
+@app.get("/health")
+def health_check():
+    """Verifica readiness del gateway per docker-compose healthcheck"""
+    return {
+        "status": "healthy",
+        "service": "api_gateway",
+        "redis": cache.ping(),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
 
 
 
