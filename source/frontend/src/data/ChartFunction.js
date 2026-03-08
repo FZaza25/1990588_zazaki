@@ -1,7 +1,1 @@
-export function computeTime(array){
-    let timeLabel = []
-    for(let i=1; i<=array.length; i++){
-        timeLabel.push(i*5)
-    }
-    return timeLabel
-}
+export const chartTime = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50];

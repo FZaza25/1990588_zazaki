@@ -7,7 +7,7 @@
       </h1>
     </template>
     <template #content>
-      <LineCharts :labels="chartTime" :values="sensorsData.charts.greenhouse_temperature"/>
+      <LineCharts :labels="chartTime" :values="sensorsData.charts.greenhouse_temperature" :yUnit="entries.unit"/>
     </template>
   </CentralModal>
 </template>
@@ -19,14 +19,12 @@ import CentralModal from "../common/CentralModal.vue";
 import {ref, watchEffect} from "vue";
 import {useI18n} from "vue-i18n";
 import LineCharts from "../charts/LineCharts.vue";
-import {computeTime} from "../../data/ChartFunction.js";
 import {useSensorsStore} from "../../stores/sensors.js";
+import { chartTime } from '../../data/ChartFunction.js'
 
 
 
 const openModal = ref(null)
-
-const chartTime = ref(null)
 
 const sensorsData = useSensorsStore()
 
@@ -37,12 +35,7 @@ const props = defineProps({
 })
 
 const openChart = ()=>{
-  chartTime.value = computeTime(sensorsData.charts.greenhouse_temperature)
   openModal.value.open()
 }
 
-watchEffect(()=>{
-  console.log(sensorsData.charts.greenhouse_temperature)
-  console.log(computeTime(sensorsData.charts.greenhouse_temperature))
-})
 </script>
