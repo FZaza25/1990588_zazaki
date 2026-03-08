@@ -23,6 +23,11 @@ producer = KafkaProducer(
 # Spara il json pulito dentro Kafka 
 def publish_event(sensor_id, timestamp, metric, value, unit, status="ok", **extra_data):
     """Formatta l'evento nello Schema Unificato e lo pubblica su Kafka"""
+    
+    # Arrotonda solo i valori numerici
+    if isinstance(value, (int, float)):
+        value = round(value, 2)
+    
     normalized_event = {
         "sensor_id": sensor_id,
         "timestamp": timestamp,
