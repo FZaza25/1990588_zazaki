@@ -1,5 +1,5 @@
-
-const WS_URL = 'ws://localhost:8000/ws/telemetry'
+const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
+const WS_URL = `${WS_BASE_URL}/ws/telemetry`
 
 export class TelemetrySocket {
     constructor({ onMessage, onStatus, onError } = {}) {
@@ -54,6 +54,8 @@ export class TelemetrySocket {
         if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.close(1000, 'client disconnect')
+        } else if (this.ws) {
+            this.ws.close()
         }
     }
 

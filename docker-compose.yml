@@ -108,20 +108,24 @@ services:
         condition: service_healthy  
       simulator:                    
         condition: service_started  
+        
   # ========== FRONTEND ==========
   frontend:
     build:
       context: ./source/frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
+        VITE_WS_URL: ws://localhost:8000
     container_name: mars_frontend
     ports:
-      - "5173:5173"
-    environment:
-      VITE_API_URL: http://localhost:8000
+      - "3000:80"
     depends_on:
       api_gateway:
         condition: service_started
     restart: unless-stopped
+
+
 
 volumes:
   mars_db_data:

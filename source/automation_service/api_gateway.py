@@ -21,7 +21,22 @@ app.add_middleware(
 @app.get("/api/state")
 def get_current_state():
     keys = cache.keys("sensor:*")
-    return [json.loads(cache.get(k)) for k in sorted(keys) if cache.get(k)]
+    result = []
+
+    for k in sorted(keys):
+        raw = cache.get(k)
+        if not raw:
+            continue
+
+        try:
+            obj = json.loads(raw)
+            if "series_id" in obj and "source_id" in obj:
+                result.append(obj)
+        except Exception:
+            continue
+
+    return result
+
 
 # --- 2. LIVE TELEMETRY (WEBSOCKET) US-10 ---
 @app.websocket("/ws/telemetry")
