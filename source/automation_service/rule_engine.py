@@ -7,7 +7,7 @@ TOPIC = "mars.telemetry.normalized"
 BROKER = "kafka:9092"
 SIMULATOR_URL = "http://simulator:8080"
 
-# Connessione a Redis (il nostro State Store)
+# Redis Connection for State Store and Pub/Sub
 cache = redis.Redis(host="mars_redis", port=6379, decode_responses=True)
 
 def trigger_actuator(name, state):
@@ -18,13 +18,13 @@ def trigger_actuator(name, state):
         response = requests.post(url, json=payload, timeout=2)
         
         if response.status_code == 200:
-            print(f"[ACTUATOR] {name} successfully set to {state}", flush=True)
+            print(f"[INFO] Actuator {name} successfully set to {state}", flush=True)
         else:
-            print(f"⚠[ACTUATOR] Failed to set {name}: Status {response.status_code}", flush=True)
+            print(f"[ERROR] Failed to set actuator {name}: Status {response.status_code}", flush=True)
     except Exception as e:
-        print(f"[ACTUATOR] Connection error to simulator: {e}", flush=True)
+        print(f"[ERROR] Actuator connection failure: {e}", flush=True)
 
-print("[SYSTEM]: INITIATING RULE ENGINE (FULL LOGS)...", flush=True)
+print("[SYSTEM] Initializing Rule Engine service...", flush=True)
 
 try:
     consumer = KafkaConsumer(
@@ -35,67 +35,69 @@ try:
         api_version=(3, 7, 0),
         group_id=f'rule-engine-giulio-{time.time()}'
     )
-    print("[SYSTEM] CONNECTED TO KAFKA.", flush=True)
-    print("[SYSTEM] TELEMETRY ROUTER & PREFIX STRIPPER: ACTIVE", flush=True)
+    print("[SYSTEM] Kafka consumer connected. Routing protocol: ACTIVE", flush=True)
 
-    # Ciclo principale di ricezione messaggi
     for message in consumer:
         data = message.value
-        s_id = data.get('sensor_id')
-        val = data.get('value')
         
-        # Filtro: processiamo solo se c'è un ID sensore valido e un valore
-        if s_id and 'value' in data:
+        # 1. DATA EXTRACTION
+        source_id = data.get('source_id', '')
+        series_id = data.get('series_id', '')
+        val = data.get('value')
+        metric = data.get('metric', 'default')
+
+        if source_id and val is not None:
             
-            # --- 1. CAPIAMO LA NATURA DEL DATO (PRIMA DI PULIRLO) ---
-            # Se la stringa originale contiene "telemetry", è uno stream in tempo reale
-            is_telemetry = "telemetry" in s_id
+            # --- 2. ROUTING LOGIC & PREFIX REMOVAL ---
+            # Telemetry is identified by the "mars/telemetry/" prefix in source_id
+            is_telemetry = source_id.startswith("mars/telemetry/")
             
-            # --- 2. PULIZIA DEL NOME (STRIP PREFIX) ---
-            # Rimuove percorsi come "mars/telemetry/" e tiene solo l'ultimo pezzo
-            if "/" in s_id:
-                s_id = s_id.split("/")[-1]
-                data['sensor_id'] = s_id  # Aggiorniamo il JSON con il nome pulito
+            # Remove prefix for clean output (e.g., mars/telemetry/solar_array -> solar_array)
+            clean_id = source_id.replace("mars/telemetry/", "")
             
-            # --- 3. SMISTAMENTO (ROUTING COME DA CONSEGNA) ---
+            # Normalize JSON payload for Gateway/Frontend requirements
+            data['sensor_id'] = clean_id
+            data['source_id'] = clean_id
+            data['metric'] = metric
+
+            # --- 3. CHANNEL DISTRIBUTION ---
             if is_telemetry:
-                # Dati Telemetria (es. solar_array) -> SOLO su WebSocket (Stream live)
+                # STREAM CHANNEL: Published to WebSocket subscribers
+                # Includes metric and cleaned ID
                 cache.publish("mars_telemetry_stream", json.dumps(data))
+                print(f"[DEBUG] Telemetry Stream: {clean_id} | {metric}: {val}", flush=True)
             else:
-                # Dati Sensori REST (es. greenhouse_temperature) -> SOLO su Redis (Stato API)
-                metric = data.get('metric', 'default')
-                cache.set(f"sensor:{s_id}:{metric}", json.dumps(data))
-            
-            # Se il valore non è un numero, non possiamo fare confronti matematici
-            if not isinstance(val, (int, float)):
-                continue
-            
-            # --- 4. CONTROLLO REGOLE (AUTOMAZIONE) ---
-            try:
-                conn = get_db_connection()
-                with conn.cursor() as cur:
-                    # Cerchiamo regole che corrispondano al nome del sensore pulito
-                    cur.execute("SELECT * FROM automation_rules WHERE sensor_name = %s", (s_id,))
-                    rules = cur.fetchall()
-                    
-                    for rule in rules:
-                        op = rule['operator']
-                        threshold = float(rule['threshold_value'])
+                # REST CHANNEL: Stored in Redis for state polling
+                # Key format: sensor:{id}:{metric}
+                cache.set(f"sensor:{clean_id}:{metric}", json.dumps(data))
+                print(f"[DEBUG] Sensor State Updated: {clean_id} | {metric}", flush=True)
+
+            # --- 4. AUTOMATION RULES ENGINE ---
+            if isinstance(val, (int, float)):
+                try:
+                    conn = get_db_connection()
+                    with conn.cursor() as cur:
+                        # Match rules using the cleaned sensor name
+                        cur.execute("SELECT * FROM automation_rules WHERE sensor_name = %s", (clean_id,))
+                        rules = cur.fetchall()
                         
-                        # Verifica condizione (Supporta >, <, ==, >=, <=)
-                        triggered = False
-                        if op == ">" and val > threshold: triggered = True
-                        elif op == "<" and val < threshold: triggered = True
-                        elif op == "==" and val == threshold: triggered = True
-                        elif op == ">=" and val >= threshold: triggered = True
-                        elif op == "<=" and val <= threshold: triggered = True
-                        
-                        if triggered:
-                            print(f"\033[91m  [ALARM] \033[0m {s_id} ACTIVATE {rule['actuator_name']}! ({val} {op} {threshold}) ", flush=True)
-                            trigger_actuator(rule['actuator_name'], rule['target_state'])
-                conn.close()
-            except Exception as e:
-                print(f"[ERROR DB] {e}", flush=True)
+                        for rule in rules:
+                            op = rule['operator']
+                            threshold = float(rule['threshold_value'])
+                            
+                            triggered = False
+                            if op == ">" and val > threshold: triggered = True
+                            elif op == "<" and val < threshold: triggered = True
+                            elif op == "==" and val == threshold: triggered = True
+                            elif op == ">=" and val >= threshold: triggered = True
+                            elif op == "<=" and val <= threshold: triggered = True
+                            
+                            if triggered:
+                                print(f"[ALERT] Automation triggered: {clean_id} ({metric}) {val} {op} {threshold}", flush=True)
+                                trigger_actuator(rule['actuator_name'], rule['target_state'])
+                    conn.close()
+                except Exception as e:
+                    print(f"[ERROR] Database query failed: {e}", flush=True)
 
 except Exception as e:
-    print(f"[CRITICAL] Kafka connection failed: {e}", flush=True)
+    print(f"[CRITICAL] Rule Engine failure: {e}", flush=True)
