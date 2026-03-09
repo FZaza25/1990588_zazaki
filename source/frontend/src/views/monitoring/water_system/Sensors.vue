@@ -32,20 +32,20 @@ let intervalId
 
 const handleData = (data) => {
   data.map(sensor => {
-    if(sensor.sensor_id in sensorsData.sensorsList){
-      sensorsData.sensorsList[sensor.sensor_id] = {
+    if(sensor.source_id in sensorsData.sensorsList){
+      sensorsData.sensorsList[sensor.source_id] = {
         ...sensor,
-        icon: sensorsData.sensorsList[sensor.sensor_id].icon,
+        icon: sensorsData.sensorsList[sensor.source_id].icon,
       };
-      if(sensor.sensor_id !== 'air_quality_voc' && sensor.sensor_id !== 'water_tank_level'){
-        if(sensorsData.charts[sensor.sensor_id].length > 10){
-          sensorsData.charts[sensor.sensor_id].shift()
-          sensorsData.charts[sensor.sensor_id].push(sensor.value)
+      if(sensor.source_id !== 'air_quality_voc' && sensor.source_id !== 'water_tank_level'){
+        if(sensorsData.charts[sensor.source_id].length > 10){
+          sensorsData.charts[sensor.source_id].shift()
+          sensorsData.charts[sensor.source_id].push(sensor.value)
         } else {
-          sensorsData.charts[sensor.sensor_id].push(sensor.value)
+          sensorsData.charts[sensor.source_id].push(sensor.value)
         }
       } else {
-        sensorsData.charts[sensor.sensor_id] = Number(sensor.value)
+        sensorsData.charts[sensor.source_id] = Number(sensor.value)
       }
     }
   })
