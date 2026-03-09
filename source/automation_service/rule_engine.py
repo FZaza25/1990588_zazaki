@@ -3,9 +3,12 @@ from kafka import KafkaConsumer
 from persistence_layer import get_db_connection
 import requests
 
-KAFKA_TOPIC = "mars.telemetry.normalized"
+TOPIC = "mars.telemetry.normalized"
 BROKER = "kafka:9092"
 SIMULATOR_URL = "http://simulator:8080"
+
+# Connessione a Redis (il nostro State Store)
+cache = redis.Redis(host="mars_redis", port=6379, decode_responses=True)
 
 def trigger_actuator(name, state):
     """Sends a REST POST command to the simulator actuators"""
@@ -25,104 +28,74 @@ print("[SYSTEM]: INITIATING RULE ENGINE (FULL LOGS)...", flush=True)
 
 try:
     consumer = KafkaConsumer(
-        KAFKA_TOPIC,
+        TOPIC,
         bootstrap_servers=[BROKER],
         value_deserializer=lambda x: json.loads(x.decode('utf-8')),
         auto_offset_reset='latest',
         api_version=(3, 7, 0),
         group_id=f'rule-engine-giulio-{time.time()}'
     )
-    print(f"[SYSTEM] CONNECTED.", flush=True)
-except Exception as e:
-    print(f"[ERROR] FAILURE: {e}", flush=True)
-    sys.exit(1)
+    print("[SYSTEM] CONNECTED TO KAFKA.", flush=True)
+    print("[SYSTEM] TELEMETRY ROUTER & PREFIX STRIPPER: ACTIVE", flush=True)
 
-cache = redis.Redis(host="mars_redis", port=6379, decode_responses=True)
-
-while True:
-    messages = consumer.poll(timeout_ms=1000)
-    if not messages:
-        continue
-
-    for tp, msgs in messages.items():
-        for message in msgs:
-            data = message.value
-
-            series_id = data.get("series_id")
-            source_id = data.get("source_id")
-            metric = data.get("metric")
-            val = data.get("value")
-            unit = data.get("unit")
-            timestamp = data.get("timestamp")
-            event_type = data.get("type")
-
-            if not series_id or source_id is None:
-                print(f"[WARN] Evento scartato: manca series_id/source_id -> {data}", flush=True)
-                continue
-
-            print(f"[RECEIVED] {series_id} = {val} {unit}", flush=True)
-
-            # Cache latest-state per serie, non per sola sorgente
-            cache.set(f"sensor:{series_id}", json.dumps(data))
-
-            # Pubblica verso frontend
-            cache.publish("mars_telemetry_stream", json.dumps(data))
-
-            # Se non numerico, niente confronto regole
+    # Ciclo principale di ricezione messaggi
+    for message in consumer:
+        data = message.value
+        s_id = data.get('sensor_id')
+        val = data.get('value')
+        
+        # Filtro: processiamo solo se c'è un ID sensore valido e un valore
+        if s_id and 'value' in data:
+            
+            # --- 1. CAPIAMO LA NATURA DEL DATO (PRIMA DI PULIRLO) ---
+            # Se la stringa originale contiene "telemetry", è uno stream in tempo reale
+            is_telemetry = "telemetry" in s_id
+            
+            # --- 2. PULIZIA DEL NOME (STRIP PREFIX) ---
+            # Rimuove percorsi come "mars/telemetry/" e tiene solo l'ultimo pezzo
+            if "/" in s_id:
+                s_id = s_id.split("/")[-1]
+                data['sensor_id'] = s_id  # Aggiorniamo il JSON con il nome pulito
+            
+            # --- 3. SMISTAMENTO (ROUTING COME DA CONSEGNA) ---
+            if is_telemetry:
+                # Dati Telemetria (es. solar_array) -> SOLO su WebSocket (Stream live)
+                cache.publish("mars_telemetry_stream", json.dumps(data))
+            else:
+                # Dati Sensori REST (es. greenhouse_temperature) -> SOLO su Redis (Stato API)
+                metric = data.get('metric', 'default')
+                cache.set(f"sensor:{s_id}:{metric}", json.dumps(data))
+            
+            # Se il valore non è un numero, non possiamo fare confronti matematici
             if not isinstance(val, (int, float)):
                 continue
-
+            
+            # --- 4. CONTROLLO REGOLE (AUTOMAZIONE) ---
             try:
                 conn = get_db_connection()
                 with conn.cursor() as cur:
-                    # Compatibilità semplice:
-                    # prima prova match su series_id, poi su source_id
-                    cur.execute("""
-                        SELECT * FROM automation_rules
-                        WHERE sensor_name = %s OR sensor_name = %s
-                    """, (series_id, source_id))
+                    # Cerchiamo regole che corrispondano al nome del sensore pulito
+                    cur.execute("SELECT * FROM automation_rules WHERE sensor_name = %s", (s_id,))
                     rules = cur.fetchall()
-
+                    
                     for rule in rules:
-                        op = rule["operator"]
-                        threshold = float(rule["threshold_value"])
-                        rule_unit = rule["threshold_unit"]
-
-                        # opzionale ma consigliato: se unità diversa, skippa
-                        if rule_unit and unit and rule_unit != unit:
-                            print(
-                                f"[RULE SKIP] {series_id}: unit mismatch event={unit} rule={rule_unit}",
-                                flush=True
-                            )
-                            continue
-
+                        op = rule['operator']
+                        threshold = float(rule['threshold_value'])
+                        
+                        # Verifica condizione (Supporta >, <, ==, >=, <=)
                         triggered = False
-                        if op == ">" and val > threshold:
-                            triggered = True
-                        elif op == "<" and val < threshold:
-                            triggered = True
-                        elif op == ">=" and val >= threshold:
-                            triggered = True
-                        elif op == "<=" and val <= threshold:
-                            triggered = True
-                        elif op == "==" and val == threshold:
-                            triggered = True
-                        elif op == "!=" and val != threshold:
-                            triggered = True
-
+                        if op == ">" and val > threshold: triggered = True
+                        elif op == "<" and val < threshold: triggered = True
+                        elif op == "==" and val == threshold: triggered = True
+                        elif op == ">=" and val >= threshold: triggered = True
+                        elif op == "<=" and val <= threshold: triggered = True
+                        
                         if triggered:
-                            print(
-                                f"[RULE TRUE] {timestamp} | {series_id}: {val} {op} {threshold} -> {rule['actuator_name']}={rule['target_state']}",
-                                flush=True
-                            )
-                            trigger_actuator(rule["actuator_name"], rule["target_state"])
-                        else:
-                            print(
-                                f"[RULE FALSE] {timestamp} | {series_id}: {val} {op} {threshold}",
-                                flush=True
-                            )
-
+                            print(f"\033[91m  [ALARM] \033[0m {s_id} ACTIVATE {rule['actuator_name']}! ({val} {op} {threshold}) ", flush=True)
+                            trigger_actuator(rule['actuator_name'], rule['target_state'])
                 conn.close()
             except Exception as e:
                 print(f"[ERROR DB] {e}", flush=True)
 
+except Exception as e:
+    print(f"[CRITICAL] Kafka connection failed: {e}", flush=True)
