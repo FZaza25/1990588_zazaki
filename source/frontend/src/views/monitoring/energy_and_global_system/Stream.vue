@@ -1,7 +1,7 @@
 <template>
   <div class="title">
     <h2>{{ t('stream') }}</h2>
-    <div class="d-flex flex-column overflow-hidden">
+    <div class="d-flex flex-column">
       <div class="d-flex ga-2">
         <SolarArray :entries="stream?.streamsList?.solar_array"/>
         <Radation :entries="stream?.streamsList?.radiation"/>
@@ -12,7 +12,7 @@
         <PowerConsumption :entries="stream?.streamsList?.power_consumption"/>
         <ThermalLoop :entries="stream?.streamsList?.thermal_loop"/>
       </div>
-      <div class="d-flex mr-7 pt-4">
+      <div class="d-flex mr-7 pt-4 pb-8">
         <AirLock :entries="stream?.streamsList?.airlock"/>
       </div>
     </div>
