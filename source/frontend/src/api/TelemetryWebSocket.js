@@ -71,6 +71,6 @@ export class TelemetrySocket {
 }
 
 export function isTelemetryEvent(event) {
-    return typeof event?.tags.subsystem === 'string' && event.tags.subsystem.length > 0
+    return typeof event?.source_id === 'string' && event.source_id.length > 0
 }
 

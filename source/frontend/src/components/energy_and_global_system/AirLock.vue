@@ -1,5 +1,5 @@
 <template>
-  <StreamCard :title="props.entries.sensor_id" :icon="props.entries.icon" :value="props.entries.value"/>
+  <StreamCard :title="props.entries.source_id" :icon="props.entries.icon" :value="props.entries.value"/>
 </template>
 
 <script setup>
@@ -12,9 +12,5 @@ const openModal = ref(null)
 const props = defineProps({
   entries: Object
 })
-
-const openChart = ()=>{
-  openModal.value.open()
-}
 
 </script>
