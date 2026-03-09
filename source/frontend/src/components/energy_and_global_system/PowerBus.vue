@@ -3,7 +3,7 @@
   <CentralModal ref="openModal">
     <template #header>
       <h1>
-        {{t('stream_name.'+props.entries.title)}}
+        {{ selectedMetric ? t('metrics.' + selectedMetric) : '' }}
       </h1>
     </template>
     <template #content>
