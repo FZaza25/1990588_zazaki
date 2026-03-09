@@ -50,27 +50,29 @@ onMounted(() => {
     },
     onError: (e) => { console.error('WS error', e) },
     onMessage: (evt) => {
-    console.log('WS message', evt)
+    // console.log('WS message', evt)
       if (!isTelemetryEvent(evt)) return
       if (!(evt.source_id in stream.streamsList)) return
 
-
       stream.streamsList[evt.source_id] = {
         ...stream.streamsList[evt.source_id],
-        ...evt,
+        [evt.metric]: {
+          ...evt,
+        },
         icon: stream.streamsList[evt.source_id].icon,
       }
 
-      if(evt.source_id !== 'life_support'){
-        if(stream.charts[evt.source_id].length > 10){
-          stream.charts[evt.source_id].shift()
-          stream.charts[evt.source_id].push(evt.value)
-        } else {
-          stream.charts[evt.source_id].push(evt.value)
-        }
-      } else {
-        stream.charts[evt.source_id] = Number(evt.value)
-      }
+      //
+      // if(evt.source_id !== 'life_support'){
+      //   if(stream.charts[evt.source_id].length > 10){
+      //     stream.charts[evt.source_id].shift()
+      //     stream.charts[evt.source_id].push(evt.value)
+      //   } else {
+      //     stream.charts[evt.source_id].push(evt.value)
+      //   }
+      // } else {
+      //   stream.charts[evt.source_id] = Number(evt.value)
+      // }
 
     }
 

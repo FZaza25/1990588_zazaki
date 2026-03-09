@@ -4,25 +4,50 @@ export const useStreamsStore = defineStore('streams', {
     state: ()=>({
         streamsList: {
             solar_array: {
-                icon: 'mdi-solar-power-variant-outline'
+                title: 'solar_array',
+                icon: 'mdi-solar-power-variant-outline',
+                power: {},
+                voltage: {},
+                current: {},
+                cumulative_energy: {},
             },
             life_support: {
-                icon: 'mdi-sprout'
+                title: 'life_support',
+                icon: 'mdi-sprout',
+                oxygen_percent: {}
             },
             radiation: {
-                icon: 'mdi-sun-wireless-outline'
+                title: 'radiation',
+                icon: 'mdi-sun-wireless-outline',
+                radiation_uSv_h: {}
             },
             thermal_loop: {
-                icon: 'mdi-home-thermometer-outline'
+                title: 'thermal_loop',
+                icon: 'mdi-home-thermometer-outline',
+                temperature: {},
+                flow: {}
             },
             power_bus: {
-                icon: 'mdi-home-lightning-bolt-outline'
+                title: 'power_bus',
+                icon: 'mdi-home-lightning-bolt-outline',
+                power: {},
+                voltage: {},
+                current: {},
+                cumulative_energy: {},
             },
             power_consumption: {
-                icon: 'mdi-power-plug-battery-outline'
+                title: 'power_consumption',
+                icon: 'mdi-power-plug-battery-outline',
+                power: {},
+                voltage: {},
+                current: {},
+                cumulative_energy: {},
             },
             airlock: {
-                icon: 'mdi-home-lock-open'
+                title: 'airlock',
+                icon: 'mdi-home-lock-open',
+                cycles: {},
+                state: {},
             },
         },
         charts: {

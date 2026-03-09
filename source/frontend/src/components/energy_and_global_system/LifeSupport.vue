@@ -1,9 +1,9 @@
 <template>
-  <StreamCard :title="props.entries.source_id" :icon="props.entries.icon" :value="props.entries.value + ' ' + props.entries.unit" :openChart="()=>openChart()"/>
+  <StreamCard :title="props.entries.title" :icon="props.entries.icon" :value="props.entries" :openChart="()=>openChart()"/>
   <CentralModal ref="openModal">
     <template #header>
       <h1>
-        {{t('stream_name.'+props.entries.sensor_id)}}
+        {{t('stream_name.'+props.entries.title)}}
       </h1>
     </template>
     <template #content>

@@ -33,6 +33,18 @@ const messages = {
             water_system: 'Water and hydroponic systems',
             energy_and_global_systems: 'Energy and global systems',
             actuators: 'Actuators',
+        },
+        metrics: {
+            power: 'Power',
+            voltage: 'Voltage',
+            current: 'Current',
+            cumulative_energy: 'Cumulative energy',
+            temperature: 'Temperature',
+            flow: 'Flow',
+            cycles: 'Cycles',
+            state: 'State',
+            oxygen_percent: 'Oxygen percent',
+            radiation_uSv_h: 'Radiation uSv/h',
         }
     },
     it: {
