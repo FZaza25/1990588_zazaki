@@ -32,6 +32,7 @@ const messages = {
             indoor_environment: 'Indoor Environment',
             water_system: 'Water and hydroponic systems',
             energy_and_global_systems: 'Energy and global systems',
+            actuators: 'Actuators',
         }
     },
     it: {

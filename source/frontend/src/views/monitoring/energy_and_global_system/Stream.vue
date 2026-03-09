@@ -1,6 +1,7 @@
 <template>
   <div class="title">
     <h2>{{ t('stream') }}</h2>
+    <p>{{status}}</p>
     <div class="d-flex flex-column overflow-hidden">
       <div class="d-flex ga-2">
         <SolarArray :entries="stream?.streamsList?.solar_array"/>
@@ -50,24 +51,26 @@ onMounted(() => {
     },
     onError: (e) => { console.error('WS error', e) },
     onMessage: (evt) => {
-      if (!isTelemetryEvent(evt)) return
-      if (!(evt.sensor_id in stream.streamsList)) return
 
-      stream.streamsList[evt.sensor_id] = {
-        ...stream.streamsList[evt.sensor_id],
+      // if (!isTelemetryEvent(evt)) return
+      // if (!(evt.tags.subsystem in stream.streamsList)) return
+
+
+      stream.streamsList[evt.tags.subsystem] = {
+        ...stream.streamsList[evt.tags.subsystem],
         ...evt,
-        icon: stream.streamsList[evt.sensor_id].icon,
+        icon: stream.streamsList[evt.tags.subsystem].icon,
       }
 
-      if(evt.sensor_id !== 'life_support'){
-        if(stream.charts[evt.sensor_id].length > 10){
-          stream.charts[evt.sensor_id].shift()
-          stream.charts[evt.sensor_id].push(evt.value)
+      if(evt.tags.subsystem !== 'life_support'){
+        if(stream.charts[evt.tags.subsystem].length > 10){
+          stream.charts[evt.tags.subsystem].shift()
+          stream.charts[evt.tags.subsystem].push(evt.value)
         } else {
-          stream.charts[evt.sensor_id].push(evt.value)
+          stream.charts[evt.tags.subsystem].push(evt.value)
         }
       } else {
-        stream.charts[evt.sensor_id] = Number(evt.value)
+        stream.charts[evt.tags.subsystem] = Number(evt.value)
       }
 
     }

@@ -1,4 +1,4 @@
-const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
+const WS_BASE_URL = 'ws://localhost:8000'
 const WS_URL = `${WS_BASE_URL}/ws/telemetry`
 
 export class TelemetrySocket {
@@ -71,6 +71,6 @@ export class TelemetrySocket {
 }
 
 export function isTelemetryEvent(event) {
-    return typeof event?.sensor_id === 'string' && event.sensor_id.length > 0
+    return typeof event?.tags.subsystem === 'string' && event.tags.subsystem.length > 0
 }
 

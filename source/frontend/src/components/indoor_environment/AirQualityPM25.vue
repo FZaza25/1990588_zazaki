@@ -17,7 +17,7 @@
 import UtilityCard from "../common/UtilityCard.vue";
 import {chartTime} from "../../data/ChartFunction.js";
 import CentralModal from "../common/CentralModal.vue";
-import {ref} from "vue";
+import {ref, watch} from "vue";
 import {useSensorsStore} from "../../stores/sensors.js";
 import {useI18n} from "vue-i18n";
 import BarChart from "../charts/BarChart.vue";

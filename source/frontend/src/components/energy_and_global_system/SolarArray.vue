@@ -1,9 +1,9 @@
 <template>
-  <StreamCard :title="props.entries.sensor_id" :icon="props.entries.icon" :value="props.entries.value + ' ' + props.entries.unit" :openChart="()=>openChart()"/>
+  <StreamCard :title="props.entries?.tags?.subsystem" :icon="props.entries.icon" :value="props.entries.value + ' ' + props.entries.unit" :openChart="()=>openChart()"/>
   <CentralModal ref="openModal">
     <template #header>
       <h1>
-        {{t('stream_name.'+props.entries.sensor_id)}}
+        {{t('stream_name.'+props.entries.tags.subsystem)}}
       </h1>
     </template>
     <template #content>
@@ -16,7 +16,7 @@
 
 import {chartTime} from "../../data/ChartFunction.js";
 import CentralModal from "../common/CentralModal.vue";
-import {ref} from "vue";
+import {ref, watch} from "vue";
 import {useI18n} from "vue-i18n";
 import {useStreamsStore} from "../../stores/streams.js";
 import StreamCard from "../common/StreamCard.vue";
@@ -31,7 +31,11 @@ const {t} = useI18n();
 const props = defineProps({
   entries: Object
 })
-console.log(stream.charts)
+
+watch(()=>stream.streamsList,()=>{
+  console.log("watch", stream.streamsList);
+},{deep:true});
+
 const openChart = ()=>{
   openModal.value.open()
 }
