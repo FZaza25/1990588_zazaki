@@ -7,7 +7,7 @@
       </h1>
     </template>
     <template #content>
-      <LineCharts :labels="chartTime" :values="stream.charts.solar_array" :yUnit="stream.streamsList.power_bus.selected.value.unit"/>
+      <LineCharts :labels="chartTime" :values="selectedChartValues" :yUnit="selectedUnit"/>
     </template>
   </CentralModal>
 </template>
@@ -16,7 +16,7 @@
 
 import {chartTime} from "../../data/ChartFunction.js";
 import CentralModal from "../common/CentralModal.vue";
-import {ref, watch} from "vue";
+import {computed, ref} from "vue";
 import {useI18n} from "vue-i18n";
 import {useStreamsStore} from "../../stores/streams.js";
 import StreamCard from "../common/StreamCard.vue";
@@ -32,9 +32,14 @@ const props = defineProps({
   entries: Object
 })
 
-watch(()=>stream.streamsList,()=>{
-  console.log(stream.charts.solar_array.current)
-},{deep:true})
+const selectedMetric = computed(() => props.entries?.selected?.value?.metric)
+const selectedUnit = computed(() => props.entries?.selected?.value?.unit ?? '')
+const selectedChartValues = computed(() => {
+  const metric = selectedMetric.value
+  if (!metric) return []
+  const series = stream.charts?.[props.entries?.title]?.[metric]
+  return Array.isArray(series) ? series : []
+})
 
 const openChart = ()=>{
   openModal.value.open()
