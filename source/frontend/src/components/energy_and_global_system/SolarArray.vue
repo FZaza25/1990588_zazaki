@@ -33,7 +33,7 @@ const props = defineProps({
 })
 
 watch(()=>stream.streamsList,()=>{
-  console.log(stream.streamsList.power_bus.selected)
+  console.log(stream.charts.solar_array.current)
 },{deep:true})
 
 const openChart = ()=>{

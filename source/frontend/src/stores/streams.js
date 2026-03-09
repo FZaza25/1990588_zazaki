@@ -79,13 +79,34 @@ export const useStreamsStore = defineStore('streams', {
             },
         },
         charts: {
-            solar_array: [],
-            life_support: null,
-            radiation: [],
-            thermal_loop: [],
-            power_bus: [],
-            power_consumption: [],
-            airlock: [],
+            solar_array: {
+                power: [],
+                voltage: [],
+                current: [],
+                cumulative_energy: [],
+            },
+            life_support: {
+                oxygen_percent: null
+            },
+            radiation: {
+                radiation_uSv_h: []
+            },
+            thermal_loop: {
+                temperature: [],
+                flow: []
+            },
+            power_bus: {
+                power: [],
+                voltage: [],
+                current: [],
+                cumulative_energy: [],
+            },
+            power_consumption: {
+                power: [],
+                voltage: [],
+                current: [],
+                cumulative_energy: [],
+            }
         }
     }),
     persist: true

@@ -62,16 +62,30 @@ onMounted(() => {
         icon: stream.streamsList[evt.source_id].icon,
       }
 
-      // if(evt.source_id !== 'life_support'){
-      //   if(stream.charts[evt.source_id].length > 10){
-      //     stream.charts[evt.source_id].shift()
-      //     stream.charts[evt.source_id].push(evt.value)
-      //   } else {
-      //     stream.charts[evt.source_id].push(evt.value)
-      //   }
-      // } else {
-      //   stream.charts[evt.source_id] = Number(evt.value)
-      // }
+      const sourceCharts = stream.charts?.[evt.source_id]
+      if (!sourceCharts || !(evt.metric in sourceCharts)) return
+
+      const rawValue = evt.value
+      const normalizedValue =
+        typeof rawValue === 'string' && rawValue.trim() !== '' && !Number.isNaN(Number(rawValue))
+          ? Number(rawValue)
+          : rawValue
+
+      const currentMetricChart = sourceCharts[evt.metric]
+      if (Array.isArray(currentMetricChart)) {
+        const nextSeries = [...currentMetricChart, normalizedValue]
+        if (nextSeries.length > 11) nextSeries.shift()
+
+        stream.charts[evt.source_id] = {
+          ...sourceCharts,
+          [evt.metric]: nextSeries
+        }
+      } else {
+        stream.charts[evt.source_id] = {
+          ...sourceCharts,
+          [evt.metric]: normalizedValue
+        }
+      }
 
     }
 
