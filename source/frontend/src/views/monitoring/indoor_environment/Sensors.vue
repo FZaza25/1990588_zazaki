@@ -47,6 +47,7 @@ const handleData = (data) => {
         ...sensor,
         icon: sensorsData.sensorsList[sensor.source_id].icon,
       };
+      if(sensor.series_id === 'air_quality_pm25:pm1' || sensor.series_id === 'air_quality_pm25:pm10' || sensor.series_id === 'air_quality_voc:co2e_ppm') return;
       if(sensor.source_id !== 'air_quality_voc' && sensor.source_id !== 'water_tank_level'){
         if(sensorsData.charts[sensor.source_id].length > 10){
           sensorsData.charts[sensor.source_id].shift()
