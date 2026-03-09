@@ -9,8 +9,8 @@
       <div class="d-flex justify-center text-size-large">
         <div  v-if="loaded.loading" class="d-flex justify-lg-space-between justify-center w-100 align-center">
           <div class="d-flex flex-column">
-            <h2>{{ t('metrics.'+selectedMetric.value?.metric)}}</h2>
-            <h2>{{ selectedMetric.value.value+ ' '+ selectedMetric.value.unit}}</h2>
+            <h2>{{ t('metrics.'+selectedMetric?.value?.metric)}}</h2>
+            <h2>{{ selectedMetric.value?.value+ ' '+ selectedMetric.value?.unit}}</h2>
           </div>
           <div class="d-flex flex-column h-100 py-4" :class="metrics.length > 1?'justify-space-between':'justify-end'">
             <v-icon v-if="metrics.length >1" icon="mdi-swap-horizontal" @click="()=>changeMetrics()" class="icon-hover ml-2" size="40"/>
