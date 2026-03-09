@@ -42,12 +42,14 @@ const loaded = useLoadingStore()
 
 const handleData = (data) => {
   data.map(sensor => {
+    if(sensor.series_id === 'air_quality_pm25:pm1' || sensor.series_id === 'air_quality_pm25:pm10' || sensor.series_id === 'air_quality_voc:co2e_ppm') return;
+
     if(sensor.source_id in sensorsData.sensorsList){
       sensorsData.sensorsList[sensor.source_id] = {
         ...sensor,
         icon: sensorsData.sensorsList[sensor.source_id].icon,
       };
-      if(sensor.series_id === 'air_quality_pm25:pm1' || sensor.series_id === 'air_quality_pm25:pm10' || sensor.series_id === 'air_quality_voc:co2e_ppm') return;
+
       if(sensor.source_id !== 'air_quality_voc' && sensor.source_id !== 'water_tank_level'){
         if(sensorsData.charts[sensor.source_id].length > 10){
           sensorsData.charts[sensor.source_id].shift()
@@ -56,9 +58,23 @@ const handleData = (data) => {
           sensorsData.charts[sensor.source_id].push(sensor.value)
         }
       } else {
-        sensorsData.charts[sensor.source_id] = Number(sensor.value)
-      }
+        if(sensor.source_id !== 'water_tank_level'){
+          if(sensor.unit === 'L'){
+            sensorsData.charts[sensor.source_id] = {
+              ...sensorsData.charts[sensor.source_id],
+              liters: sensorsData.charts[sensor.source_id].liters.push(sensor.value)
+            }
+          }else{
+            sensorsData.charts[sensor.source_id] = {
+              ...sensorsData.charts[sensor.source_id],
+              pct: sensorsData.charts[sensor.source_id].pct.push(Number(sensor.value))
+            }
+          }
+        }else{
+          sensorsData.charts[sensor.source_id] = Number(sensor.value)
+        }
 
+      }
     }
   })
   if(data.length > 0){

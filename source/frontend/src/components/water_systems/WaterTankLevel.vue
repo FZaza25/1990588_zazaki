@@ -7,7 +7,7 @@
       </h1>
     </template>
     <template #content>
-      <GaugeChart :value="sensorsData.charts.water_tank_level" :min="0" :max="4000" :unit="props.entries.unit"/>
+      <GaugeChart :value="sensorsData.charts.water_tank_level" :min="0" :max="100" :unit="'%'"/>
     </template>
   </CentralModal>
 </template>
