@@ -34,15 +34,20 @@
 import {useI18n} from "vue-i18n";
 import {useLoadingStore} from "../../stores/loading.js";
 import {ref, watch} from "vue";
+import {useStreamsStore} from "../../stores/streams.js";
 
 const {t} = useI18n();
 
 const loaded = useLoadingStore()
+const stream = useStreamsStore()
 
 const props = defineProps({
   title: String,
   icon: String,
-  value: String,
+  value: {
+    type: Object,
+    default: () => ({})
+  },
   openChart: {
     type: Function,
     default: null
@@ -52,9 +57,31 @@ const props = defineProps({
 const metrics = ref([])
 
 const selectedMetric = ref({
-  index: null,
+  index: 0,
   value: null
 })
+
+watch(
+  () => selectedMetric.value,
+  (nextSelected) => {
+    const sourceId = nextSelected?.value?.source_id
+    if (!sourceId || !stream.streamsList[sourceId]) return
+
+    const currentSelected = stream.streamsList[sourceId].selected
+    const sameMetric = currentSelected?.value?.metric === nextSelected.value.metric
+    const sameIndex = currentSelected?.index === nextSelected.index
+    if (sameMetric && sameIndex) return
+
+    stream.streamsList[sourceId] = {
+      ...stream.streamsList[sourceId],
+      selected: {
+        index: nextSelected.index,
+        value: nextSelected.value
+      }
+    }
+  },
+  { deep: true }
+)
 
 function changeMetrics() {
   if(selectedMetric.value.index < metrics.value.length-1){
@@ -73,26 +100,36 @@ function changeMetrics() {
 
 }
 
-watch(()=>metrics.value, ()=> {
-  if (metrics.value.length > 0 && selectedMetric.value.value !== null) {
-    selectedMetric.value = {
-     ...selectedMetric.value,
-      value: metrics.value[selectedMetric.value.index],
-    }
-  }
-})
+watch(
+  () => props.value,
+  (nextValue) => {
+    const streamValue = nextValue ?? {}
+    const { title, icon, selected, ...metricsValue } = streamValue
 
-watch(()=>props.value, ()=> {
-  const {title, icon, ...metricsValue} = props.value
-  metrics.value = Object.values(metricsValue)
+    const nextMetrics = Object.values(metricsValue).filter((item) => {
+      return item && typeof item === "object" && "metric" in item && "value" in item
+    })
 
-  if (metrics.value.length > 0 && selectedMetric.value.value === null) {
-    selectedMetric.value = {
-      index: 0,
-      value: metrics.value[0]
+    metrics.value = nextMetrics
+
+    if (nextMetrics.length === 0) {
+      selectedMetric.value = { index: 0, value: null }
+      return
     }
-  }
-},{deep:true})
+
+    const currentMetricKey = selectedMetric.value?.value?.metric
+    const foundIndex = nextMetrics.findIndex((m) => m.metric === currentMetricKey)
+    const safeIndex = foundIndex >= 0
+      ? foundIndex
+      : Math.min(selectedMetric.value.index ?? 0, nextMetrics.length - 1)
+
+    selectedMetric.value = {
+      index: safeIndex,
+      value: nextMetrics[safeIndex]
+    }
+  },
+  { deep: true, immediate: true }
+)
 
 
 </script>

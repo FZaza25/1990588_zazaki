@@ -62,7 +62,6 @@ onMounted(() => {
         icon: stream.streamsList[evt.source_id].icon,
       }
 
-      //
       // if(evt.source_id !== 'life_support'){
       //   if(stream.charts[evt.source_id].length > 10){
       //     stream.charts[evt.source_id].shift()

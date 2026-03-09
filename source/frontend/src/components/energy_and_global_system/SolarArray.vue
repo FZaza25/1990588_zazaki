@@ -7,7 +7,7 @@
       </h1>
     </template>
     <template #content>
-      <LineCharts :labels="chartTime" :values="stream.charts.solar_array" :yUnit="props.entries.unit"/>
+      <LineCharts :labels="chartTime" :values="stream.charts.solar_array" :yUnit="stream.streamsList.power_bus.selected.value.unit"/>
     </template>
   </CentralModal>
 </template>
@@ -31,6 +31,10 @@ const {t} = useI18n();
 const props = defineProps({
   entries: Object
 })
+
+watch(()=>stream.streamsList,()=>{
+  console.log(stream.streamsList.power_bus.selected)
+},{deep:true})
 
 const openChart = ()=>{
   openModal.value.open()
