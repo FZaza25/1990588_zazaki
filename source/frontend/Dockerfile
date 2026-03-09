@@ -1,19 +1,21 @@
-FROM node:20-alpine
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Copia package files
-COPY package*.json ./
+ARG VITE_API_URL=http://localhost:8000
+ARG VITE_WS_URL=ws://localhost:8000
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_WS_URL=$VITE_WS_URL
 
-# Installa dipendenze
+COPY package*.json ./
 RUN npm ci
 
-# Copia tutto il codice
 COPY . .
+RUN npm run build
 
-# Espone la porta Vite
-EXPOSE 5173
-
-# Avvia il dev server
-CMD ["npm", "run", "dev"]
+FROM nginx:alpine
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
 

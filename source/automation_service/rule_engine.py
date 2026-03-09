@@ -47,55 +47,82 @@ while True:
     for tp, msgs in messages.items():
         for message in msgs:
             data = message.value
-            s_id = data.get("sensor_id")
+
+            series_id = data.get("series_id")
+            source_id = data.get("source_id")
+            metric = data.get("metric")
             val = data.get("value")
-            
-            # --- 1. LOG GENERALE ---
-            print(f"RECEIVED: {s_id} = {val}", flush=True)
-            
-            # --- 2. GESTIONE STATO (API REST) E WEBSOCKET ---
-            # Per le REST API salviamo lo stato intero con il nome originale
-            cache.set(f"sensor:{s_id}", json.dumps(data))
-            
-            # FILTRO WEBSOCKET: Trasmette solo i dati 'mars/telemetry/...' troncandone l'id
-            if s_id and s_id.startswith("mars/telemetry/"):
-                # Facciamo una copia per non rovinare i dati che vanno al DB
-                stream_data = data.copy()
-                # Tronchiamo la stringa sostituendo il prefisso
-                stream_data['sensor_id'] = s_id.replace("mars/telemetry/", "")
-                
-                # Invia ad Andrea i dati con il nome pulito
-                cache.publish("mars_telemetry_stream", json.dumps(stream_data))
-                
-            # Se il valore non è un numero, non possiamo fare confronti matematici
+            unit = data.get("unit")
+            timestamp = data.get("timestamp")
+            event_type = data.get("type")
+
+            if not series_id or source_id is None:
+                print(f"[WARN] Evento scartato: manca series_id/source_id -> {data}", flush=True)
+                continue
+
+            print(f"[RECEIVED] {series_id} = {val} {unit}", flush=True)
+
+            # Cache latest-state per serie, non per sola sorgente
+            cache.set(f"sensor:{series_id}", json.dumps(data))
+
+            # Pubblica verso frontend
+            cache.publish("mars_telemetry_stream", json.dumps(data))
+
+            # Se non numerico, niente confronto regole
             if not isinstance(val, (int, float)):
                 continue
-            
-            # --- 3. Controllo REGOLE ---
+
             try:
                 conn = get_db_connection()
                 with conn.cursor() as cur:
-                    cur.execute("SELECT * FROM automation_rules WHERE sensor_name = %s", (s_id,))
+                    # Compatibilità semplice:
+                    # prima prova match su series_id, poi su source_id
+                    cur.execute("""
+                        SELECT * FROM automation_rules
+                        WHERE sensor_name = %s OR sensor_name = %s
+                    """, (series_id, source_id))
                     rules = cur.fetchall()
-                    
+
                     for rule in rules:
-                        op = rule['operator']
-                        threshold = float(rule['threshold_value'])
-                        
-                        # Verifica condizione: val > threshold o val < threshold, ecc.
+                        op = rule["operator"]
+                        threshold = float(rule["threshold_value"])
+                        rule_unit = rule["threshold_unit"]
+
+                        # opzionale ma consigliato: se unità diversa, skippa
+                        if rule_unit and unit and rule_unit != unit:
+                            print(
+                                f"[RULE SKIP] {series_id}: unit mismatch event={unit} rule={rule_unit}",
+                                flush=True
+                            )
+                            continue
+
                         triggered = False
-                        if op == ">" and val > threshold: triggered = True
-                        elif op == "<" and val < threshold: triggered = True
-                        elif op == ">=" and val >= threshold: triggered = True
-                        elif op == "<=" and val <= threshold: triggered = True
-                        elif op == "==" and val == threshold: triggered = True
-                        elif op == "!=" and val != threshold: triggered = True
+                        if op == ">" and val > threshold:
+                            triggered = True
+                        elif op == "<" and val < threshold:
+                            triggered = True
+                        elif op == ">=" and val >= threshold:
+                            triggered = True
+                        elif op == "<=" and val <= threshold:
+                            triggered = True
+                        elif op == "==" and val == threshold:
+                            triggered = True
+                        elif op == "!=" and val != threshold:
+                            triggered = True
 
                         if triggered:
-                            print(f"\033[91m  [ALARM] \033[0m {s_id} ACTIVATE {rule['actuator_name']}! ({val} {op} {threshold}) ", flush=True)
-                            trigger_actuator(rule['actuator_name'], rule['target_state'])
+                            print(
+                                f"[RULE TRUE] {timestamp} | {series_id}: {val} {op} {threshold} -> {rule['actuator_name']}={rule['target_state']}",
+                                flush=True
+                            )
+                            trigger_actuator(rule["actuator_name"], rule["target_state"])
                         else:
-                            print(f"  [EVAL] {s_id}: {val} {op} {threshold} → FALSE (no action)", flush=True)
+                            print(
+                                f"[RULE FALSE] {timestamp} | {series_id}: {val} {op} {threshold}",
+                                flush=True
+                            )
+
                 conn.close()
             except Exception as e:
-                print(f"ERROR DB: {e}", flush=True)
+                print(f"[ERROR DB] {e}", flush=True)
+
