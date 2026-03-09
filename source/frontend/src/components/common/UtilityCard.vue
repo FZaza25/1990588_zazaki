@@ -1,19 +1,22 @@
 <template>
   <div class="utility-card">
-    <div class="d-flex flex-column">
+    <div v-if="loaded.loading" class="d-flex flex-column">
       <div class="d-flex align-center justify-lg-space-between justify-center flex-wrap">
         <v-icon :icon="props.icon" size="40" class="mr-2 w-25"/>
         <h2 class="">{{ t('sensors_name.'+props.title) }}</h2>
 
       </div>
       <div class="d-flex justify-center text-size-large">
-        <div  v-if="loaded.loading" class="d-flex justify-lg-space-between justify-center w-100 align-center">
+        <div class="d-flex justify-lg-space-between justify-center w-100 align-center">
           <h1>{{props.value}}</h1>
           <v-icon icon="mdi-chart-areaspline" @click="props.openChart" class="icon-hover ml-2" size="40"/>
         </div>
 
-        <v-progress-circular indeterminate color="primary" v-else/>
+
       </div>
+    </div>
+    <div v-else class="d-flex justify-center align-center w-100">
+      <v-progress-circular indeterminate color="primary"/>
     </div>
 
   </div>
