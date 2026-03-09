@@ -49,39 +49,44 @@ try:
         if source_id and val is not None:
             
             # --- 2. ROUTING LOGIC & PREFIX REMOVAL ---
-            # Telemetry is identified by the "mars/telemetry/" prefix in source_id
             is_telemetry = source_id.startswith("mars/telemetry/")
-            
-            # Remove prefix for clean output (e.g., mars/telemetry/solar_array -> solar_array)
             clean_id = source_id.replace("mars/telemetry/", "")
             
-            # Normalize JSON payload for Gateway/Frontend requirements
             data['sensor_id'] = clean_id
             data['source_id'] = clean_id
             data['metric'] = metric
 
             # --- 3. CHANNEL DISTRIBUTION ---
             if is_telemetry:
-                # STREAM CHANNEL: Published to WebSocket subscribers
-                # Includes metric and cleaned ID
+                # STREAM CHANNEL: Per i grafici real-time
                 cache.publish("mars_telemetry_stream", json.dumps(data))
                 print(f"[DEBUG] Telemetry Stream: {clean_id} | {metric}: {val}", flush=True)
             else:
-                # REST CHANNEL: Stored in Redis for state polling
-                # Key format: sensor:{id}:{metric}
+                # REST CHANNEL: Per lo stato attuale (polling)
                 cache.set(f"sensor:{clean_id}:{metric}", json.dumps(data))
                 print(f"[DEBUG] Sensor State Updated: {clean_id} | {metric}", flush=True)
 
-            # --- 4. AUTOMATION RULES ENGINE ---
+            # --- 4. AUTOMATION RULES ENGINE (CON CONTROLLO MODE) ---
             if isinstance(val, (int, float)):
                 try:
                     conn = get_db_connection()
                     with conn.cursor() as cur:
-                        # Match rules using the cleaned sensor name
-                        cur.execute("SELECT * FROM automation_rules WHERE sensor_name = %s", (clean_id,))
+                        # AGGIUNTA: JOIN con la tabella actuators per recuperare il campo 'mode'
+                        query = """
+                            SELECT r.*, a.mode 
+                            FROM automation_rules r
+                            JOIN actuators a ON r.actuator_name = a.name
+                            WHERE r.sensor_name = %s
+                        """
+                        cur.execute(query, (clean_id,))
                         rules = cur.fetchall()
                         
                         for rule in rules:
+                            # --- NUOVA LOGICA: Se l'attuatore è in MANUAL, il Rule Engine lo ignora ---
+                            if rule['mode'] != 'AUTO':
+                                print(f"[SKIP] Rule for {rule['actuator_name']} ignored: Mode is MANUAL", flush=True)
+                                continue
+
                             op = rule['operator']
                             threshold = float(rule['threshold_value'])
                             
