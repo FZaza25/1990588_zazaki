@@ -1,3 +1,4 @@
+
 import json, redis, time, sys
 from kafka import KafkaConsumer
 from persistence_layer import get_db_connection
@@ -8,21 +9,36 @@ BROKER = "kafka:9092"
 SIMULATOR_URL = "http://simulator:8080"
 
 # Redis Connection for State Store and Pub/Sub
-cache = redis.Redis(host="mars_redis", port=6379, decode_responses=True)
+cache = redis.Redis(host="state_store", port=6379, decode_responses=True)
 
 def trigger_actuator(name, state):
-    """Sends a REST POST command to the simulator actuators"""
+    """Invia il comando solo se lo stato è diverso dall'ultimo inviato"""
     try:
+        # 1. Chiediamo a Redis: "Qual è l'ultimo comando che ho inviato a questa ventola?"
+        last_state_key = f"last_cmd:{name}"
+        last_sent_state = cache.get(last_state_key)
+        
+        # 2. Se l'ultimo comando è uguale a quello di adesso, ci fermiamo qui.
+        if last_sent_state == state:
+            # Non stampiamo nulla per non intasare i log, usciamo e basta
+            return 
+
+        # 3. Se invece lo stato è diverso (es. prima era OFF e ora è ON), inviamo il comando
         url = f"{SIMULATOR_URL}/api/actuators/{name}"
         payload = {"state": state}
+        
+        print(f"[DEBUG] Cambio stato rilevato! Invio a simulatore: {payload}", flush=True)
         response = requests.post(url, json=payload, timeout=2)
         
         if response.status_code == 200:
-            print(f"[INFO] Actuator {name} successfully set to {state}", flush=True)
+            print(f"[INFO] Attuatore {name} impostato correttamente a {state}", flush=True)
+            # 4. SALVIAMO NELLA MEMORIA (Redis) che ora la ventola è ON
+            cache.set(last_state_key, state)
         else:
-            print(f"[ERROR] Failed to set actuator {name}: Status {response.status_code}", flush=True)
+            print(f"[ERROR] Il simulatore ha rifiutato il comando: Status {response.status_code}", flush=True)
+            
     except Exception as e:
-        print(f"[ERROR] Actuator connection failure: {e}", flush=True)
+        print(f"[ERROR] Connessione al simulatore fallita: {e}", flush=True)
 
 print("[SYSTEM] Initializing Rule Engine service...", flush=True)
 
@@ -64,7 +80,7 @@ try:
             else:
                 # REST CHANNEL: Per lo stato attuale (polling)
                 cache.set(f"sensor:{clean_id}:{metric}", json.dumps(data))
-                print(f"[DEBUG] Sensor State Updated: {clean_id} | {metric}", flush=True)
+                print(f"[DEBUG] Sensor State Updated: {clean_id} | {metric} {val}", flush=True)
 
             # --- 4. AUTOMATION RULES ENGINE (CON CONTROLLO MODE) ---
             if isinstance(val, (int, float)):

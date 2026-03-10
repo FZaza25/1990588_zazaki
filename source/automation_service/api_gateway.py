@@ -14,7 +14,7 @@ class MarsEncoder(json.JSONEncoder):
         if isinstance(obj, datetime): return obj.isoformat()
         return super().default(obj)
 
-cache = redis.Redis(host="mars_redis", port=6379, decode_responses=True)
+cache = redis.Redis(host="state_store", port=6379, decode_responses=True)
 
 app.add_middleware(
     CORSMiddleware, 
@@ -85,6 +85,7 @@ def patch_actuator_mode(name: str, payload: dict):
             res = cur.fetchone()
             conn.commit()
             if not res: raise HTTPException(status_code=404, detail="Non trovato")
+            cache.delete(f"last_cmd:{name}")
             cache.publish("actuator_updates", json.dumps(res, cls=MarsEncoder))
             return res
     finally: conn.close()
@@ -115,10 +116,12 @@ def patch_actuator_status(name: str, payload: dict):
             try:
                 print(f"DEBUG: Invio comando a simulator: {name} -> {new_status}", flush=True)
                 sim_url = f"http://simulator:8080/api/actuators/{name}"
-                r = requests.post(sim_url, json={"status": new_status}, timeout=2)
+                r = requests.post(sim_url, json={"state": new_status}, timeout=2)
                 print(f"DEBUG: Risposta simulator: {r.status_code}", flush=True)
             except Exception as e:
                 print(f"CRITICAL: Errore simulatore: {e}", flush=True)
+
+            cache.delete(f"last_cmd:{name}")
 
             # 3. Notifica via Redis
             cache.publish("actuator_updates", json.dumps(res, cls=MarsEncoder))
