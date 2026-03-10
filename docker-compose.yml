@@ -103,7 +103,10 @@ services:
     # Aspetta che i servizi siano HEALTHY
     depends_on:
       kafka:
-        condition: service_healthy  
+        condition: service_healthy 
+      mars_db:
+        condition: service_healthy
+         
       state_store:
         condition: service_healthy  
       simulator:                    
