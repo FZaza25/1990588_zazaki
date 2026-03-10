@@ -11,7 +11,7 @@
             hide-details
         />
         <v-switch
-            v-if="!auto"
+            :disabled="auto"
             v-model="isOn"
             :label="isOn? 'ON':'OFF'"
             color="orange"

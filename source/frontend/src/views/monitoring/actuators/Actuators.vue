@@ -106,10 +106,20 @@ async function updateActuatorMode(actuatorName, isAuto) {
   }
 }
 
-function updateActuatorStatus(actuatorName, isOn) {
+async function updateActuatorStatus(actuatorName, isOn) {
   const current = actuatorsState.value[actuatorName]
   if (!current) return
-  current.status = isOn ? 'ON' : 'OFF'
+  const nextStatus = isOn ? 'ON' : 'OFF'
+  current.status = nextStatus
+
+  try {
+    actuatorsState.value[actuatorName] = await api.patch(
+      `/api/actuators/${actuatorName}/status`,
+      { status: nextStatus }
+    )
+  } catch (err) {
+    console.log(err)
+  }
 }
 
 function appendRule(rule) {
