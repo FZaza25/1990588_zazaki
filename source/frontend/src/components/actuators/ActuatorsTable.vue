@@ -1,7 +1,7 @@
 <template>
   <div class="actuators-table">
     <div class="d-flex justify-space-between">
-      <h2 >{{ t('actuators.'+props?.items[0]?.actuator_name) }}</h2>
+      <h2 >{{ t('actuators.'+props.actuatorName) }}</h2>
       <div class="tooltip-container d-flex bg-background align-center justify-space-between w-50 rounded-lg my-5">
         <v-switch
             v-model="auto"
@@ -49,7 +49,7 @@
   </div>
   <CentralModal ref="openModal">
     <template #header>
-      <h1>Add a new rule for {{ t('actuators.'+props?.items[0]?.actuator_name) }}</h1>
+      <h1>Add a new rule for {{ t('actuators.' + props.actuatorName) }}</h1>
     </template>
     <template #footer>
       <div class="d-flex w-auto ga-4 justify-end">
@@ -77,22 +77,14 @@
 
 <script setup>
 import {useI18n} from "vue-i18n";
-import {ref} from "vue";
+import {computed, ref} from "vue";
 import CentralModal from "../common/CentralModal.vue";
 
-const {t} = useI18n();
-
-const auto = ref(false)
-
-const isOn = ref(false);
-
-const openModal = ref(null);
-
-function openAddModal(){
-  openModal.value.open()
-}
-
 const props = defineProps({
+  actuatorName: {
+    type: String,
+    required: true
+  },
   header: {
     type: Array,
     required: true
@@ -100,8 +92,38 @@ const props = defineProps({
   items: {
     type: Array,
     required: true
+  },
+  actuatorState: {
+    type: Object,
+    required: true
   }
 })
+
+const emit = defineEmits(['update-mode', 'update-status'])
+
+const {t} = useI18n();
+
+const auto = computed({
+  get: () => props.actuatorState?.mode === 'AUTO',
+  set: (value) => {
+    emit('update-mode', Boolean(value))
+  }
+})
+
+const isOn = computed({
+  get: () => props.actuatorState?.status === 'ON',
+  set: (value) => {
+    emit('update-status', Boolean(value))
+  }
+})
+
+const openModal = ref(null);
+
+function openAddModal(){
+  openModal.value.open()
+}
+
+
 </script>
 
 <style scoped lang="scss">

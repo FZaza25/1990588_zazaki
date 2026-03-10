@@ -1,9 +1,37 @@
 <template>
   <div class="tables-wrapper">
-    <ActuatorsTable :header="headers" :items="tables.cooling_fan"/>
-    <ActuatorsTable :header="headers" :items="tables.habitat_heater" />
-    <ActuatorsTable :header="headers" :items="tables.entrance_humidifier" />
-    <ActuatorsTable :header="headers" :items="tables.hall_ventilation" />
+    <ActuatorsTable
+        actuator-name="cooling_fan"
+        :actuator-state="actuatorsState.cooling_fan"
+        :header="headers"
+        :items="tables.cooling_fan"
+        @update-mode="(value) => updateActuatorMode('cooling_fan', value)"
+        @update-status="(value) => updateActuatorStatus('cooling_fan', value)"
+    />
+    <ActuatorsTable
+        actuator-name="habitat_heater"
+        :actuator-state="actuatorsState.habitat_heater"
+        :header="headers"
+        :items="tables.habitat_heater"
+        @update-mode="(value) => updateActuatorMode('habitat_heater', value)"
+        @update-status="(value) => updateActuatorStatus('habitat_heater', value)"
+    />
+    <ActuatorsTable
+        actuator-name="entrance_humidifier"
+        :actuator-state="actuatorsState.entrance_humidifier"
+        :header="headers"
+        :items="tables.entrance_humidifier"
+        @update-mode="(value) => updateActuatorMode('entrance_humidifier', value)"
+        @update-status="(value) => updateActuatorStatus('entrance_humidifier', value)"
+    />
+    <ActuatorsTable
+        actuator-name="hall_ventilation"
+        :actuator-state="actuatorsState.hall_ventilation"
+        :header="headers"
+        :items="tables.hall_ventilation"
+        @update-mode="(value) => updateActuatorMode('hall_ventilation', value)"
+        @update-status="(value) => updateActuatorStatus('hall_ventilation', value)"
+    />
   </div>
 </template>
 
@@ -17,6 +45,13 @@ const tables = ref({
   habitat_heater: [],
   hall_ventilation: [],
   entrance_humidifier: [],
+})
+
+const actuatorsState = ref({
+  cooling_fan: null,
+  habitat_heater: null,
+  hall_ventilation: null,
+  entrance_humidifier: null,
 })
 
 const headers = [
@@ -39,9 +74,37 @@ function distributeRulesByActuator(rules = []) {
   })
 }
 
+function handleActuators(actuators) {
+  actuators.map(actuator => {
+    actuatorsState.value[actuator.name] = actuator
+  })
+}
+
+async function updateActuatorMode(actuatorName, isAuto) {
+  const current = actuatorsState.value[actuatorName]
+  if (!current) return
+
+  const nextMode = isAuto ? 'AUTO' : 'MANUAL'
+  current.mode = nextMode
+
+  try {
+    const updated = await api.patch(`/api/actuators/${actuatorName}/mode`, { mode: nextMode })
+    actuatorsState.value[actuatorName] = updated
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+function updateActuatorStatus(actuatorName, isOn) {
+  const current = actuatorsState.value[actuatorName]
+  if (!current) return
+  current.status = isOn ? 'ON' : 'OFF'
+}
 
 onMounted(async ()=>{
   try{
+    const actuators = await api.get('/api/actuators')
+    handleActuators(actuators)
     const response = await api.get('/api/rules')
     const rules = Array.isArray(response)
       ? response
@@ -49,7 +112,7 @@ onMounted(async ()=>{
         ? response.data
         : []
     distributeRulesByActuator(rules)
-    console.log(tables.value)
+
   }catch(err){
     console.log(err);
   }
