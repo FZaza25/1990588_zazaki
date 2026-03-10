@@ -3,6 +3,7 @@
     <ActuatorsTable
         actuator-name="cooling_fan"
         :actuator-state="actuatorsState.cooling_fan"
+        :pending="pendingByActuator.cooling_fan"
         :sensor-readings="sensorReadings"
         :loading="rulesLoading"
         :header="headers"
@@ -16,6 +17,7 @@
     <ActuatorsTable
         actuator-name="habitat_heater"
         :actuator-state="actuatorsState.habitat_heater"
+        :pending="pendingByActuator.habitat_heater"
         :sensor-readings="sensorReadings"
         :loading="rulesLoading"
         :header="headers"
@@ -29,6 +31,7 @@
     <ActuatorsTable
         actuator-name="entrance_humidifier"
         :actuator-state="actuatorsState.entrance_humidifier"
+        :pending="pendingByActuator.entrance_humidifier"
         :sensor-readings="sensorReadings"
         :loading="rulesLoading"
         :header="headers"
@@ -42,6 +45,7 @@
     <ActuatorsTable
         actuator-name="hall_ventilation"
         :actuator-state="actuatorsState.hall_ventilation"
+        :pending="pendingByActuator.hall_ventilation"
         :sensor-readings="sensorReadings"
         :loading="rulesLoading"
         :header="headers"
@@ -72,6 +76,12 @@ const actuatorsState = ref({
   habitat_heater: null,
   hall_ventilation: null,
   entrance_humidifier: null,
+})
+const pendingByActuator = ref({
+  cooling_fan: false,
+  habitat_heater: false,
+  hall_ventilation: false,
+  entrance_humidifier: false,
 })
 const sensorReadings = ref({})
 const rulesLoading = ref(true)
@@ -169,6 +179,7 @@ async function updateActuatorMode(actuatorName, isAuto) {
 
   const nextMode = isAuto ? 'AUTO' : 'MANUAL'
   current.mode = nextMode
+  pendingByActuator.value[actuatorName] = true
 
   try {
     actuatorsState.value[actuatorName] = await api.patch(`/api/actuators/${actuatorName}/mode`, {mode: nextMode})
@@ -178,6 +189,8 @@ async function updateActuatorMode(actuatorName, isAuto) {
     startAutoPollingIfNeeded()
   } catch (err) {
     console.log(err)
+  } finally {
+    pendingByActuator.value[actuatorName] = false
   }
 }
 
@@ -186,6 +199,7 @@ async function updateActuatorStatus(actuatorName, isOn) {
   if (!current) return
   const nextStatus = isOn ? 'ON' : 'OFF'
   current.status = nextStatus
+  pendingByActuator.value[actuatorName] = true
 
   try {
     actuatorsState.value[actuatorName] = await api.patch(
@@ -194,6 +208,8 @@ async function updateActuatorStatus(actuatorName, isOn) {
     )
   } catch (err) {
     console.log(err)
+  } finally {
+    pendingByActuator.value[actuatorName] = false
   }
 }
 

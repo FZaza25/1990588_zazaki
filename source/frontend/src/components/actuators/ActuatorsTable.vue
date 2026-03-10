@@ -4,7 +4,7 @@
       <h2 >{{ t('actuators.'+props.actuatorName) }}</h2>
       <div class="tooltip-container d-flex bg-background align-center justify-space-between w-50 rounded-lg my-5">
         <v-switch
-            :disabled="props.loading"
+            :disabled="props.loading || props.pending"
             v-model="auto"
             :label="auto? 'Automatic':'Manual'"
             color="orange"
@@ -12,7 +12,7 @@
             hide-details
         />
         <v-switch
-            :disabled="auto || props.loading"
+            :disabled="auto || props.loading || props.pending"
             v-model="isOn"
             :label="isOn? 'ON':'OFF'"
             color="orange"
@@ -172,6 +172,10 @@ const props = defineProps({
   sensorReadings: {
     type: Object,
     default: () => ({})
+  },
+  pending: {
+    type: Boolean,
+    default: false
   },
   loading: {
     type: Boolean,
