@@ -59,8 +59,7 @@ To decouple the business logic from the simulator-specific hardware dialects, th
 }
 ```
 
-Nota: Nel Rule Engine, sensor_name usato dalle regole corrisponde a sensor_id normalizzato (es. "greenhouse_temperature", "co2_hall", "solar_array").
-This guarantees that downstream services (Rule Engine and Dashboard) can process any event uniformly, regardless of its origin.
+Note: In the Rule Engine, the sensor_name used by rules corresponds to the normalized sensor_id (e.g. "greenhouse_temperature", "co2_hall", "solar_array"). This ensures that downstream services, such as the Rule Engine and Dashboard, can process any event uniformly, regardless of its origin.
 
 ### Rule Model
 The automation logic is defined through a straightforward relational model, evaluated dynamically by the Rule Engine upon receiving a new event from the broker.
