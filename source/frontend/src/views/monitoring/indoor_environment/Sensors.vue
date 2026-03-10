@@ -61,12 +61,11 @@ const handleData = (data) => {
           sensorsData.charts[sensor.source_id].push(sensor.value)
         }
       } else {
-        if(sensor.source_id !== 'water_tank_level'){
-          if(sensor.unit === '%'){
-            sensorsData.charts[sensor.source_id].push(sensor.value)
-          }
-        }else{
+        if(sensor.source_id === 'water_tank_level'){
           sensorsData.charts[sensor.source_id] = Number(sensor.value)
+        } else {
+          const numericValue = Number(sensor.value)
+          sensorsData.charts[sensor.source_id] = Number.isFinite(numericValue) ? numericValue : 0
         }
 
       }

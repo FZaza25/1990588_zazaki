@@ -16,7 +16,7 @@
 
 import UtilityCard from "../common/UtilityCard.vue";
 import CentralModal from "../common/CentralModal.vue";
-import {ref} from "vue";
+import {ref, watch} from "vue";
 import {useSensorsStore} from "../../stores/sensors.js";
 import {useI18n} from "vue-i18n";
 import GaugeChart from "../charts/GaugeChart.vue";
@@ -24,7 +24,6 @@ import GaugeChart from "../charts/GaugeChart.vue";
 const openModal = ref(null)
 
 const sensorsData = useSensorsStore()
-
 
 const {t} = useI18n();
 

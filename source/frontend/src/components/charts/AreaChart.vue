@@ -35,7 +35,7 @@ const props = defineProps({
   values: { type: Array, default: () => [] },
   datasetLabel: { type: String, default: 'Telemetry' },
   yUnit: { type: String, default: '' },
-  xUnit: { type: String, default: '' },
+  xUnit: { type: String, default: 's' },
   borderColor: { type: String, default: '#0B304F' },
   fillColor: { type: String, default: 'rgba(11, 48, 79, 0.22)' }
 })
