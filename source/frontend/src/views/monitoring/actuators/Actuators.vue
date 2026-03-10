@@ -3,6 +3,7 @@
     <ActuatorsTable
         actuator-name="cooling_fan"
         :actuator-state="actuatorsState.cooling_fan"
+        :sensor-readings="sensorReadings"
         :loading="rulesLoading"
         :header="headers"
         :items="tables.cooling_fan"
@@ -15,6 +16,7 @@
     <ActuatorsTable
         actuator-name="habitat_heater"
         :actuator-state="actuatorsState.habitat_heater"
+        :sensor-readings="sensorReadings"
         :loading="rulesLoading"
         :header="headers"
         :items="tables.habitat_heater"
@@ -27,6 +29,7 @@
     <ActuatorsTable
         actuator-name="entrance_humidifier"
         :actuator-state="actuatorsState.entrance_humidifier"
+        :sensor-readings="sensorReadings"
         :loading="rulesLoading"
         :header="headers"
         :items="tables.entrance_humidifier"
@@ -39,6 +42,7 @@
     <ActuatorsTable
         actuator-name="hall_ventilation"
         :actuator-state="actuatorsState.hall_ventilation"
+        :sensor-readings="sensorReadings"
         :loading="rulesLoading"
         :header="headers"
         :items="tables.hall_ventilation"
@@ -69,16 +73,19 @@ const actuatorsState = ref({
   hall_ventilation: null,
   entrance_humidifier: null,
 })
+const sensorReadings = ref({})
 const rulesLoading = ref(true)
 
 const headers = [
   { title: "Sensor", key: "sensor_name" },
+  { title: "Sensor Value", key: "current_sensor_value" },
   { title: "Operator", key: "operator" },
   { title: "Threshold", key: "threshold_value" },
   { title: "Target State", key: "target_state" },
   { title: "Actions", key: "actions" }
 ]
 let actuatorsPollingId = null
+let sensorsPollingId = null
 
 function distributeRulesByActuator(rules = []) {
   Object.keys(tables.value).forEach((actuatorKey) => {
@@ -102,6 +109,38 @@ async function refreshActuatorsState() {
   try {
     const actuators = await api.get('/api/actuators')
     handleActuators(actuators)
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+function handleSensorState(state = []) {
+  const nextReadings = {}
+  state.forEach((sensor) => {
+    const sourceId = sensor?.source_id
+    if (!sourceId) return
+    if (
+      sensor?.series_id === 'air_quality_pm25:pm1' ||
+      sensor?.series_id === 'air_quality_pm25:pm10' ||
+      sensor?.series_id === 'air_quality_voc:co2e_ppm' ||
+      sensor?.series_id === 'water_tank_level:level_pct'
+    ) return
+
+    const value = sensor?.value
+    const unit = sensor?.unit
+    const display = value == null ? undefined : `${value}${unit ? ` ${unit}` : ''}`
+    if (!display) return
+    nextReadings[sourceId] = display
+  })
+  sensorReadings.value = nextReadings
+}
+
+async function refreshSensorReadings() {
+  try {
+    const state = await api.get('/api/state')
+    if (Array.isArray(state)) {
+      handleSensorState(state)
+    }
   } catch (err) {
     console.log(err)
   }
@@ -189,6 +228,7 @@ async function deleteRule(ruleId) {
 onMounted(async ()=>{
   try{
     await refreshActuatorsState()
+    await refreshSensorReadings()
     const response = await api.get('/api/rules')
     const rules = Array.isArray(response)
       ? response
@@ -203,12 +243,20 @@ onMounted(async ()=>{
   } finally {
     rulesLoading.value = false
   }
+
+  sensorsPollingId = setInterval(async () => {
+    await refreshSensorReadings()
+  }, 5000)
 })
 
 onUnmounted(() => {
   if (actuatorsPollingId) {
     clearInterval(actuatorsPollingId)
     actuatorsPollingId = null
+  }
+  if (sensorsPollingId) {
+    clearInterval(sensorsPollingId)
+    sensorsPollingId = null
   }
 })
 

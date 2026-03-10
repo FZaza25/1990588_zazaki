@@ -36,6 +36,12 @@
       <template #item.sensor_name="{ item }">
         <span>{{ t('sensors_name.' + item.sensor_name) }}</span>
       </template>
+      <template #item.current_sensor_value="{ item }">
+        <span v-if="props.sensorReadings?.[item.sensor_name]">
+          {{ props.sensorReadings[item.sensor_name] }}
+        </span>
+        <v-progress-circular v-else indeterminate color="primary" size="18" width="2" />
+      </template>
       <template #item.actions="{ item }">
         <div class="d-flex w-100 ga-4">
           <v-tooltip text="Edit rule" location="top">
@@ -162,6 +168,10 @@ const props = defineProps({
   actuatorState: {
     type: Object,
     required: true
+  },
+  sensorReadings: {
+    type: Object,
+    default: () => ({})
   },
   loading: {
     type: Boolean,
