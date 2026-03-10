@@ -57,6 +57,7 @@ To decouple the business logic from the simulator-specific hardware dialects, th
     "airlock_id": "string"        // Optional
   }
 }
+```
 
 Nota: Nel Rule Engine, sensor_name usato dalle regole corrisponde a sensor_id normalizzato (es. "greenhouse_temperature", "co2_hall", "solar_array").
 This guarantees that downstream services (Rule Engine and Dashboard) can process any event uniformly, regardless of its origin.
