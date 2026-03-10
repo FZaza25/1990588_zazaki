@@ -3,7 +3,7 @@ from psycopg2.extras import RealDictCursor
 
 def get_db_connection():
     return psycopg2.connect(
-        host="mars_postgres",
+        host="mars_db",
         database="mars_habitat",
         user="zazaki",
         password="hackathon2026",
