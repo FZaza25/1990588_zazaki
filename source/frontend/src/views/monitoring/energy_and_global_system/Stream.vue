@@ -1,7 +1,7 @@
 <template>
   <div class="title">
     <h2>{{ t('stream') }}</h2>
-    <div class="d-flex flex-column">
+    <div v-if="status==='open'" class="d-flex flex-column">
       <div class="d-flex ga-2">
         <SolarArray :entries="stream?.streamsList?.solar_array"/>
         <Radation :entries="stream?.streamsList?.radiation"/>
@@ -15,6 +15,9 @@
       <div class="d-flex mr-7 pt-4 pb-8">
         <AirLock :entries="stream?.streamsList?.airlock"/>
       </div>
+    </div>
+    <div v-else class="d-flex justify-center h-100 align-center w-100">
+      <v-progress-circular indeterminate color="background"/>
     </div>
 
   </div>
