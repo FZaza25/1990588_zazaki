@@ -35,25 +35,29 @@ Simulator → Ingestion Service → Broker → Rule Engine → Actuators
 All services are containerized with Docker and orchestrated via `docker-compose`.
 
 ### Standard Event Schema
-To decouple the business logic from the specific hardware dialects provided by the simulator's OpenAPI, the Ingestion Service flattens all incoming data (from both REST and Telemetry streams) into a single, predictable JSON Standard Event Schema before publishing to the message broker:
+
+To decouple the business logic from the simulator-specific hardware dialects, the Ingestion Service normalizes all incoming data, from both REST polling and telemetry streams, into a single and predictable JSON event before publishing it to the message broker.
+
+```jsonc
 {
-  "sensor_id": "string",          // id 'pulito', es: 'greenhouse_temperature', 'solar_array'
-  "source_id": "string",          // id sorgente completo, es: 'mars/telemetry/solar_array'
-  "series_id": "string",          // combinazione sensor_id + metric, es: 'solar_array:power'
-  "metric": "string",             // tipo di misura, es: 'power', 'temperature', 'co2ppm'
-  "timestamp": "string (ISO 8601)",
-  "value": "number or string",
-  "unit": "string",
-  "type": "string (schema type, es: rest.scalar.v1, topic.power.v1)",
-  "status": "string (ok / warning / error)",
+  "sensor_id": "string",          // Clean sensor identifier, e.g. "greenhouse_temperature", "solar_array"
+  "source_id": "string",          // Full original source identifier, e.g. "mars/telemetry/solar_array"
+  "series_id": "string",          // Combination of sensor_id and metric, e.g. "solar_array:power"
+  "metric": "string",             // Measurement type, e.g. "power", "temperature", "co2ppm"
+  "timestamp": "string",          // ISO 8601 timestamp
+  "value": "number | string",     // Numeric or categorical value
+  "unit": "string",               // Measurement unit
+  "type": "string",               // Original schema type, e.g. "rest.scalar.v1", "topic.power.v1"
+  "status": "string",             // Event status: "ok", "warning", "error"
   "tags": {
-    "subsystem": "string (optional)",
-    "system": "string (optional)",
-    "segment": "string (optional)",
-    "loop": "string (optional)",
-    "airlock_id": "string (optional)"
+    "subsystem": "string",        // Optional
+    "system": "string",           // Optional
+    "segment": "string",          // Optional
+    "loop": "string",             // Optional
+    "airlock_id": "string"        // Optional
   }
 }
+
 Nota: Nel Rule Engine, sensor_name usato dalle regole corrisponde a sensor_id normalizzato (es. "greenhouse_temperature", "co2_hall", "solar_array").
 This guarantees that downstream services (Rule Engine and Dashboard) can process any event uniformly, regardless of its origin.
 
