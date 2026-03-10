@@ -4,7 +4,7 @@
   <img src="source/frontend/public/mars-iot-logo.png" alt="Mars IoT Logo" width="180"/>
 </p>
 
-A distributed event-driven platform for monitoring and automating a simulated Martian habitat. It ingests heterogeneous sensor data, normalizes events, evaluates automation rules, and exposes a real-time dashboard. [file:195]
+A distributed event-driven platform for monitoring and automating a simulated Martian habitat. It ingests heterogeneous sensor data, normalizes events, evaluates automation rules, and exposes a real-time dashboard. 
 
 ## Stack
 
@@ -13,7 +13,7 @@ A distributed event-driven platform for monitoring and automating a simulated Ma
 - Kafka
 - Redis
 - PostgreSQL
-- Docker Compose [file:190][file:195]
+- Docker 
 
 ## Run
 
