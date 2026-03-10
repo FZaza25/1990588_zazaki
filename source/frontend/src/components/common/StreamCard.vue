@@ -76,7 +76,9 @@ const hasMetricKey = computed(() => {
 const hasMetricValue = computed(() => selectedMetric.value?.value?.value !== undefined && selectedMetric.value?.value?.value !== null)
 const metricDisplayValue = computed(() => {
   const value = selectedMetric.value?.value?.value
-  const unit = selectedMetric.value?.value?.unit ?? ""
+  const rawUnit = selectedMetric.value?.value?.unit ?? ""
+  const normalizedUnit = String(rawUnit).trim().toLowerCase()
+  const unit = normalizedUnit === "enum" ? "" : rawUnit
   return `${value}${unit ? ` ${unit}` : ""}`
 })
 
