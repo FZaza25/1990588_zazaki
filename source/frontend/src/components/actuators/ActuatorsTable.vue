@@ -17,7 +17,7 @@
             color="orange"
             class="w-33"
             hide-details/>
-        <v-tooltip text="Add rule">
+        <v-tooltip text="Add rule" location="top">
           <template v-slot:activator="{ props }">
             <v-icon icon="mdi-plus" class="cursor-pointer" v-bind="props" @click="()=>openAddModal()" size="32"/>
           </template>
@@ -36,7 +36,7 @@
       </template>
       <template #item.actions="{ item }">
         <div class="d-flex w-100 ga-4">
-          <v-tooltip text="Edit rule">
+          <v-tooltip text="Edit rule" location="top">
             <template v-slot:activator="{ props }">
               <v-icon
                   icon="mdi-pencil"
@@ -47,7 +47,7 @@
               />
             </template>
           </v-tooltip>
-          <v-tooltip text="Delete rule">
+          <v-tooltip text="Delete rule" location="top">
             <template v-slot:activator="{ props }">
               <v-icon
                   icon="mdi-trash-can-outline"
@@ -281,5 +281,22 @@ function deleteRule(ruleId) {
 .actuators-data-table {
   border: 3px solid vars.$orange;
   overflow: hidden;
+}
+
+:deep(.actuators-data-table .v-data-table-header th),
+:deep(.actuators-data-table .v-data-table-header th .v-data-table-header__content) {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: none;
+}
+
+:deep(.actuators-data-table .v-data-table__td),
+:deep(.actuators-data-table .v-data-table__td .v-data-table__td-title),
+:deep(.actuators-data-table .v-data-table__td .v-data-table__td-value) {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: none;
 }
 </style>
