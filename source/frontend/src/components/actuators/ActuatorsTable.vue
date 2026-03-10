@@ -31,6 +31,9 @@
         :items="props.items"
         class="actuators-data-table rounded-lg"
     >
+      <template #item.sensor_name="{ item }">
+        <span>{{ t('sensors_name.' + item.sensor_name) }}</span>
+      </template>
       <template #item.actions="{ item }">
         <div class="d-flex w-100 ga-4">
           <v-tooltip text="Edit rule">
