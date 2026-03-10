@@ -8,6 +8,7 @@
         @update-mode="(value) => updateActuatorMode('cooling_fan', value)"
         @update-status="(value) => updateActuatorStatus('cooling_fan', value)"
         @rule-created="appendRule"
+        @rule-updated="updateRule"
         @delete-rule="deleteRule"
     />
     <ActuatorsTable
@@ -18,6 +19,7 @@
         @update-mode="(value) => updateActuatorMode('habitat_heater', value)"
         @update-status="(value) => updateActuatorStatus('habitat_heater', value)"
         @rule-created="appendRule"
+        @rule-updated="updateRule"
         @delete-rule="deleteRule"
     />
     <ActuatorsTable
@@ -28,6 +30,7 @@
         @update-mode="(value) => updateActuatorMode('entrance_humidifier', value)"
         @update-status="(value) => updateActuatorStatus('entrance_humidifier', value)"
         @rule-created="appendRule"
+        @rule-updated="updateRule"
         @delete-rule="deleteRule"
     />
     <ActuatorsTable
@@ -38,6 +41,7 @@
         @update-mode="(value) => updateActuatorMode('hall_ventilation', value)"
         @update-status="(value) => updateActuatorStatus('hall_ventilation', value)"
         @rule-created="appendRule"
+        @rule-updated="updateRule"
         @delete-rule="deleteRule"
     />
   </div>
@@ -112,6 +116,15 @@ function appendRule(rule) {
   const actuatorKey = rule?.actuator_name
   if (!actuatorKey || !(actuatorKey in tables.value)) return
   tables.value[actuatorKey].push(rule)
+}
+
+function updateRule(updatedRule) {
+  if (!updatedRule?.id) return
+  Object.keys(tables.value).forEach((actuatorKey) => {
+    tables.value[actuatorKey] = tables.value[actuatorKey].map((rule) =>
+      rule.id === updatedRule.id ? updatedRule : rule
+    )
+  })
 }
 
 async function deleteRule(ruleId) {

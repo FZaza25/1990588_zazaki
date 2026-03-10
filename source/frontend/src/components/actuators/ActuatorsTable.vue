@@ -38,7 +38,13 @@
         <div class="d-flex w-100 ga-4">
           <v-tooltip text="Edit rule">
             <template v-slot:activator="{ props }">
-              <v-icon icon="mdi-pencil" class="cursor-pointer" v-bind="props" size="32"/>
+              <v-icon
+                  icon="mdi-pencil"
+                  class="cursor-pointer"
+                  v-bind="props"
+                  size="32"
+                  @click="openEditModal(item)"
+              />
             </template>
           </v-tooltip>
           <v-tooltip text="Delete rule">
@@ -58,7 +64,7 @@
   </div>
   <CentralModal ref="openModal">
     <template #header>
-      <h1>Add a new rule for {{ t('actuators.' + props.actuatorName) }}</h1>
+      <h1>{{ modalTitle }}</h1>
     </template>
     <template #content>
       <v-container fluid class="py-2">
@@ -117,7 +123,7 @@
         <v-btn
             class="rounded-lg bg-primary"
             variant="text"
-            @click="createRule"
+            @click="submitRule"
         >
           <div class="font-weight-bold">
             Confirm
@@ -154,7 +160,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update-mode', 'update-status', 'rule-created', 'delete-rule'])
+const emit = defineEmits(['update-mode', 'update-status', 'rule-created', 'rule-updated', 'delete-rule'])
 
 const {t} = useI18n();
 const sensorsStore = useSensorsStore()
@@ -174,6 +180,7 @@ const form = ref({
   threshold_value: null,
   target_state: 'ON'
 })
+const editingRuleId = ref(null)
 
 const auto = computed({
   get: () => props.actuatorState?.mode === 'AUTO',
@@ -190,12 +197,36 @@ const isOn = computed({
 })
 
 const openModal = ref(null);
+const modalTitle = computed(() =>
+  editingRuleId.value
+    ? `Edit rule for ${t('actuators.' + props.actuatorName)}`
+    : `Add a new rule for ${t('actuators.' + props.actuatorName)}`
+)
 
 function openAddModal(){
+  editingRuleId.value = null
+  form.value = {
+    sensor_name: null,
+    operator: null,
+    threshold_value: null,
+    target_state: 'ON'
+  }
   openModal.value.open()
 }
 
-async function createRule() {
+function openEditModal(rule) {
+  if (!rule?.id) return
+  editingRuleId.value = rule.id
+  form.value = {
+    sensor_name: rule.sensor_name ?? null,
+    operator: rule.operator ?? null,
+    threshold_value: rule.threshold_value != null ? Number(rule.threshold_value) : null,
+    target_state: rule.target_state ?? 'ON'
+  }
+  openModal.value.open()
+}
+
+async function submitRule() {
   if (!form.value.sensor_name || !form.value.operator || form.value.threshold_value == null || !form.value.target_state) {
     return
   }
@@ -204,14 +235,22 @@ async function createRule() {
     sensor_name: form.value.sensor_name,
     operator: form.value.operator,
     threshold_value: Number(form.value.threshold_value),
-    actuator_name: props.actuatorName,
     target_state: form.value.target_state
   }
 
   try {
-    const createdRule = await api.post('/api/rules', payload)
-    emit('rule-created', createdRule)
+    if (editingRuleId.value) {
+      const updatedRule = await api.patch(`/api/rules/${editingRuleId.value}`, payload)
+      emit('rule-updated', updatedRule)
+    } else {
+      const createdRule = await api.post('/api/rules', {
+        ...payload,
+        actuator_name: props.actuatorName
+      })
+      emit('rule-created', createdRule)
+    }
     openModal.value.close()
+    editingRuleId.value = null
     form.value = {
       sensor_name: null,
       operator: null,
