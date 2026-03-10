@@ -197,19 +197,21 @@ async function updateActuatorStatus(actuatorName, isOn) {
   }
 }
 
-function appendRule(rule) {
+async function appendRule(rule) {
   const actuatorKey = rule?.actuator_name
   if (!actuatorKey || !(actuatorKey in tables.value)) return
   tables.value[actuatorKey].push(rule)
+  await refreshActuatorsState()
 }
 
-function updateRule(updatedRule) {
+async function updateRule(updatedRule) {
   if (!updatedRule?.id) return
   Object.keys(tables.value).forEach((actuatorKey) => {
     tables.value[actuatorKey] = tables.value[actuatorKey].map((rule) =>
       rule.id === updatedRule.id ? updatedRule : rule
     )
   })
+  await refreshActuatorsState()
 }
 
 async function deleteRule(ruleId) {
@@ -220,6 +222,7 @@ async function deleteRule(ruleId) {
     Object.keys(tables.value).forEach((actuatorKey) => {
       tables.value[actuatorKey] = tables.value[actuatorKey].filter((rule) => rule.id !== ruleId)
     })
+    await refreshActuatorsState()
   } catch (err) {
     console.log(err)
   }

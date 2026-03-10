@@ -146,7 +146,7 @@ IF <sensor_name> <operator> <value> [unit] THEN set <actuator_name> to ON|OFF
 ```
 
 **Acceptance Criteria:**
-- UI form accepts: sensor name (dropdown), operator (`>`, `<`, `>=`, `<=`, `==`, `!=`), value (number), unit (text), actuator name (dropdown), state (ON/OFF radio buttons)
+- UI table for each Actuator contains its own rules.
 - Rule validated before saving
 - Rule persisted to database 
 
@@ -212,7 +212,7 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 
 **Acceptance Criteria:**
 - Dashboard displays cards for each sensor: name, value, unit, charts
-- Values update in real-time via WebSocket/SSE
+- Values update via polling every 5 seconds
 
 ---
 
@@ -236,7 +236,7 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 
 **Acceptance Criteria:**
 - Toggle switch for each actuator: `cooling_fan`, `entrance_humidifier`, `hall_ventilation`, `habitat_heater`
-- Switch sends POST to `/api/actuators/{actuator_name}` with `{"state": "ON"}` or `{"state": "OFF"}`
+- Switch sends PATCH to `/api/actuators/{actuator_name}` with `{"state": "ON"}` or `{"state": "OFF"}`
 - Current state fetched on dashboard load from `/api/actuators`
 - Switch disabled during API call (loading state)
 
@@ -250,7 +250,7 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 **Acceptance Criteria:**
 - Dashboard section lists all actuators with ON/OFF badges
 - Status polled from `/api/actuators` every 5 if auto is selected seconds
-- Badge colors: green (ON), gray (OFF)
+- Switch colors: orange (ON), gray (OFF)
 
 ---
 
