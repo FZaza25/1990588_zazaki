@@ -34,6 +34,12 @@ const messages = {
             energy_and_global_systems: 'Energy and global systems',
             actuators: 'Actuators',
         },
+        actuators: {
+            cooling_fan: 'Cooling Fan',
+            habitat_heater: 'Habitat Heater',
+            hall_ventilation: 'Hall Ventilation',
+            entrance_humidifier: 'Entrance Humidifier',
+        },
         metrics: {
             power: 'Power',
             voltage: 'Voltage',
