@@ -1,13 +1,13 @@
 <template>
-  <UtilityCard :title="props.entries.sensor_id" :icon="props.entries.icon" :value="props.entries.value + ' ' + props.entries.unit" :openChart="()=>openChart()"/>
+  <UtilityCard :title="props.entries.source_id" :icon="props.entries.icon" :value="props.entries.value + ' ' + props.entries.unit" :openChart="()=>openChart()"/>
   <CentralModal ref="openModal">
     <template #header>
       <h1>
-        {{t('sensors_name.'+props.entries.sensor_id)}}
+        {{t('sensors_name.'+props.entries.source_id)}}
       </h1>
     </template>
     <template #content>
-      <GaugeChart :value="sensorsData.charts.life_support" :min="400" :max="1200" :unit="props.entries.unit"/>
+      <GaugeChart :value="sensorsData.charts.air_quality_voc" :min="0" :max="800" :unit="props.entries.unit"/>
     </template>
   </CentralModal>
 </template>

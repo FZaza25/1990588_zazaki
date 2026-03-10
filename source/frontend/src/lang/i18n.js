@@ -32,6 +32,25 @@ const messages = {
             indoor_environment: 'Indoor Environment',
             water_system: 'Water and hydroponic systems',
             energy_and_global_systems: 'Energy and global systems',
+            actuators: 'Actuators',
+        },
+        actuators: {
+            cooling_fan: 'Cooling Fan',
+            habitat_heater: 'Habitat Heater',
+            hall_ventilation: 'Hall Ventilation',
+            entrance_humidifier: 'Entrance Humidifier',
+        },
+        metrics: {
+            power: 'Power',
+            voltage: 'Voltage',
+            current: 'Current',
+            cumulative_energy: 'Cumulative energy',
+            temperature: 'Temperature',
+            flow: 'Flow',
+            cycles: 'Cycles',
+            state: 'State',
+            oxygen_percent: 'Oxygen percent',
+            radiation_uSv_h: 'Radiation uSv/h',
         }
     },
     it: {

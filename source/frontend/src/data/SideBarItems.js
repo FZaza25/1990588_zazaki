@@ -11,4 +11,8 @@ export default [
         icon: 'mdi-home-lightning-bolt',
         to: 'energy_and_global_systems'
     },
+    {
+        icon: 'mdi-tools',
+        to: 'actuators'
+    },
 ]

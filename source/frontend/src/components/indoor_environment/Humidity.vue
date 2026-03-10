@@ -1,9 +1,9 @@
 <template>
-  <UtilityCard :title="props.entries.sensor_id" :icon="props.entries.icon" :value="props.entries.value + ' ' + props.entries.unit" :openChart="()=>openChart()"/>
+  <UtilityCard :title="props.entries.source_id" :icon="props.entries.icon" :value="props.entries.value + ' ' + props.entries.unit" :openChart="()=>openChart()"/>
   <CentralModal ref="openModal">
     <template #header>
       <h1>
-        {{t('sensors_name.'+props.entries.sensor_id)}}
+        {{t('sensors_name.'+props.entries.source_id)}}
       </h1>
     </template>
     <template #content>

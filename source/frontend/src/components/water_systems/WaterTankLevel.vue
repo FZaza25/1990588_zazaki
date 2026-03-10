@@ -1,13 +1,13 @@
 <template>
-  <UtilityCard :title="props.entries.sensor_id" :icon="props.entries.icon" :value="props.entries.value + ' ' + props.entries.unit" :openChart="()=>openChart()"/>
+  <UtilityCard :title="props.entries.source_id" :icon="props.entries.icon" :value="props.entries.value + ' ' + props.entries.unit" :openChart="()=>openChart()"/>
   <CentralModal ref="openModal">
     <template #header>
       <h1>
-        {{t('sensors_name.'+props.entries.sensor_id)}}
+        {{t('sensors_name.'+props.entries.source_id)}}
       </h1>
     </template>
     <template #content>
-      <GaugeChart :value="sensorsData.charts.water_tank_level" :min="0" :max="4000" :unit="props.entries.unit"/>
+      <GaugeChart :value="sensorsData.charts.water_tank_level" :min="0" :max="100" :unit="'%'"/>
     </template>
   </CentralModal>
 </template>

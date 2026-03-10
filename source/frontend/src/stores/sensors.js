@@ -36,7 +36,8 @@ export const useSensorsStore = defineStore('sensors', {
             air_quality_voc: null,
             entrance_humidity: [],
             hydroponic_ph: [],
-            water_tank_level: []
+            water_tank_level: null
+
         }
     }),
     persist: true

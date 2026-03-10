@@ -1,6 +1,7 @@
 import EnergyAndGlobalSystems from './EnergyAndGlobalSystems.js'
 import WaterSystem from './WaterSystem.js'
 import IndoorEnvironment from './IndoorEnvironment.js'
+import Actuators from "./Actuators.js";
 
 export default {
     path: 'monitoring',
@@ -11,5 +12,5 @@ export default {
         header: () => import('../../../components/common/Header.vue'),
         content: () => import('../../../components/common/ContentCard.vue'),
     },
-    children: [EnergyAndGlobalSystems, WaterSystem, IndoorEnvironment]
+    children: [EnergyAndGlobalSystems, WaterSystem, IndoorEnvironment,Actuators]
 }

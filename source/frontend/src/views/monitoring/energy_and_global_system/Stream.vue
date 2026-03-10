@@ -1,7 +1,7 @@
 <template>
   <div class="title">
     <h2>{{ t('stream') }}</h2>
-    <div class="d-flex flex-column overflow-hidden">
+    <div class="d-flex flex-column">
       <div class="d-flex ga-2">
         <SolarArray :entries="stream?.streamsList?.solar_array"/>
         <Radation :entries="stream?.streamsList?.radiation"/>
@@ -12,7 +12,7 @@
         <PowerConsumption :entries="stream?.streamsList?.power_consumption"/>
         <ThermalLoop :entries="stream?.streamsList?.thermal_loop"/>
       </div>
-      <div class="d-flex mr-7 pt-4">
+      <div class="d-flex mr-7 pt-4 pb-8">
         <AirLock :entries="stream?.streamsList?.airlock"/>
       </div>
     </div>
@@ -50,24 +50,41 @@ onMounted(() => {
     },
     onError: (e) => { console.error('WS error', e) },
     onMessage: (evt) => {
+    // console.log('WS message', evt)
       if (!isTelemetryEvent(evt)) return
-      if (!(evt.sensor_id in stream.streamsList)) return
+      if (!(evt.source_id in stream.streamsList)) return
 
-      stream.streamsList[evt.sensor_id] = {
-        ...stream.streamsList[evt.sensor_id],
-        ...evt,
-        icon: stream.streamsList[evt.sensor_id].icon,
+      stream.streamsList[evt.source_id] = {
+        ...stream.streamsList[evt.source_id],
+        [evt.metric]: {
+          ...evt,
+        },
+        icon: stream.streamsList[evt.source_id].icon,
       }
 
-      if(evt.sensor_id !== 'life_support'){
-        if(stream.charts[evt.sensor_id].length > 10){
-          stream.charts[evt.sensor_id].shift()
-          stream.charts[evt.sensor_id].push(evt.value)
-        } else {
-          stream.charts[evt.sensor_id].push(evt.value)
+      const sourceCharts = stream.charts?.[evt.source_id]
+      if (!sourceCharts || !(evt.metric in sourceCharts)) return
+
+      const rawValue = evt.value
+      const normalizedValue =
+        typeof rawValue === 'string' && rawValue.trim() !== '' && !Number.isNaN(Number(rawValue))
+          ? Number(rawValue)
+          : rawValue
+
+      const currentMetricChart = sourceCharts[evt.metric]
+      if (Array.isArray(currentMetricChart)) {
+        const nextSeries = [...currentMetricChart, normalizedValue]
+        if (nextSeries.length > 11) nextSeries.shift()
+
+        stream.charts[evt.source_id] = {
+          ...sourceCharts,
+          [evt.metric]: nextSeries
         }
       } else {
-        stream.charts[evt.sensor_id] = Number(evt.value)
+        stream.charts[evt.source_id] = {
+          ...sourceCharts,
+          [evt.metric]: normalizedValue
+        }
       }
 
     }
