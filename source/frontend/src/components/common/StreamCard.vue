@@ -3,14 +3,17 @@
     <div v-if="loaded.loading" class="d-flex flex-column">
       <div  class="d-flex align-center justify-lg-space-between justify-center flex-wrap">
         <v-icon :icon="props.icon" size="40" class="mr-2"/>
-        <h2 class="">{{ t('stream_name.'+props.title) }}</h2>
+        <h2 v-if="hasStreamTitle">{{ t('stream_name.' + props.title) }}</h2>
+        <v-progress-circular v-else indeterminate color="primary" size="22" width="2" />
 
       </div>
       <div class="d-flex justify-center text-size-large">
         <div  class="d-flex justify-lg-space-between justify-center w-100 align-center">
           <div class="d-flex flex-column">
-            <h2>{{ t('metrics.'+selectedMetric?.value?.metric)}}</h2>
-            <h2>{{ selectedMetric.value?.value+ ' '+ selectedMetric.value?.unit}}</h2>
+            <h2 v-if="hasMetricKey">{{ t('metrics.' + metricKey) }}</h2>
+            <v-progress-circular v-else indeterminate color="primary" size="22" width="2" />
+            <h2 v-if="hasMetricValue">{{ metricDisplayValue }}</h2>
+            <v-progress-circular v-else indeterminate color="primary" size="22" width="2" />
           </div>
           <div class="d-flex flex-column h-100 py-4" :class="metrics.length > 1?'justify-space-between':'justify-end'">
             <v-icon v-if="metrics.length >1" icon="mdi-swap-horizontal" @click="()=>changeMetrics()" class="icon-hover ml-2" size="40"/>
@@ -33,10 +36,10 @@
 
 import {useI18n} from "vue-i18n";
 import {useLoadingStore} from "../../stores/loading.js";
-import {ref, watch} from "vue";
+import {computed, ref, watch} from "vue";
 import {useStreamsStore} from "../../stores/streams.js";
 
-const {t} = useI18n();
+const {t, te} = useI18n();
 
 const loaded = useLoadingStore()
 const stream = useStreamsStore()
@@ -59,6 +62,22 @@ const metrics = ref([])
 const selectedMetric = ref({
   index: 0,
   value: null
+})
+
+const hasStreamTitle = computed(() => typeof props.title === "string" && props.title.trim() !== "")
+const metricKey = computed(() => selectedMetric.value?.value?.metric)
+const hasMetricKey = computed(() => {
+  const key = metricKey.value
+  if (typeof key !== "string") return false
+  const normalized = key.trim()
+  if (!normalized || normalized === "undefined" || normalized === "null") return false
+  return te(`metrics.${normalized}`)
+})
+const hasMetricValue = computed(() => selectedMetric.value?.value?.value !== undefined && selectedMetric.value?.value?.value !== null)
+const metricDisplayValue = computed(() => {
+  const value = selectedMetric.value?.value?.value
+  const unit = selectedMetric.value?.value?.unit ?? ""
+  return `${value}${unit ? ` ${unit}` : ""}`
 })
 
 watch(
