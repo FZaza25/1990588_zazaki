@@ -7,6 +7,7 @@
         :items="tables.cooling_fan"
         @update-mode="(value) => updateActuatorMode('cooling_fan', value)"
         @update-status="(value) => updateActuatorStatus('cooling_fan', value)"
+        @rule-created="appendRule"
     />
     <ActuatorsTable
         actuator-name="habitat_heater"
@@ -15,6 +16,7 @@
         :items="tables.habitat_heater"
         @update-mode="(value) => updateActuatorMode('habitat_heater', value)"
         @update-status="(value) => updateActuatorStatus('habitat_heater', value)"
+        @rule-created="appendRule"
     />
     <ActuatorsTable
         actuator-name="entrance_humidifier"
@@ -23,6 +25,7 @@
         :items="tables.entrance_humidifier"
         @update-mode="(value) => updateActuatorMode('entrance_humidifier', value)"
         @update-status="(value) => updateActuatorStatus('entrance_humidifier', value)"
+        @rule-created="appendRule"
     />
     <ActuatorsTable
         actuator-name="hall_ventilation"
@@ -31,6 +34,7 @@
         :items="tables.hall_ventilation"
         @update-mode="(value) => updateActuatorMode('hall_ventilation', value)"
         @update-status="(value) => updateActuatorStatus('hall_ventilation', value)"
+        @rule-created="appendRule"
     />
   </div>
 </template>
@@ -98,6 +102,12 @@ function updateActuatorStatus(actuatorName, isOn) {
   const current = actuatorsState.value[actuatorName]
   if (!current) return
   current.status = isOn ? 'ON' : 'OFF'
+}
+
+function appendRule(rule) {
+  const actuatorKey = rule?.actuator_name
+  if (!actuatorKey || !(actuatorKey in tables.value)) return
+  tables.value[actuatorKey].push(rule)
 }
 
 onMounted(async ()=>{

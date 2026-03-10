@@ -59,6 +59,8 @@
                 v-model="form.sensor_name"
                 label="Sensor"
                 :items="sensorOptions"
+                item-title="title"
+                item-value="value"
                 clearable
                 variant="outlined"
             />
@@ -106,6 +108,7 @@
         <v-btn
             class="rounded-lg bg-primary"
             variant="text"
+            @click="createRule"
         >
           <div class="font-weight-bold">
             Confirm
@@ -121,6 +124,7 @@ import {useI18n} from "vue-i18n";
 import {computed, ref} from "vue";
 import CentralModal from "../common/CentralModal.vue";
 import {useSensorsStore} from "../../stores/sensors.js";
+import {api} from "../../api/Request.js";
 
 const props = defineProps({
   actuatorName: {
@@ -141,14 +145,19 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update-mode', 'update-status'])
+const emit = defineEmits(['update-mode', 'update-status', 'rule-created'])
 
 const {t} = useI18n();
 const sensorsStore = useSensorsStore()
 
 const operatorOptions = ['>', '<', '>=', '<=', '==', '!=']
 const targetStateOptions = ['ON', 'OFF']
-const sensorOptions = computed(() => Object.keys(sensorsStore.sensorsList || {}))
+const sensorOptions = computed(() =>
+  Object.keys(sensorsStore.sensorsList || {}).map((sensorKey) => ({
+    title: t(`sensors_name.${sensorKey}`),
+    value: sensorKey
+  }))
+)
 
 const form = ref({
   sensor_name: null,
@@ -175,6 +184,34 @@ const openModal = ref(null);
 
 function openAddModal(){
   openModal.value.open()
+}
+
+async function createRule() {
+  if (!form.value.sensor_name || !form.value.operator || form.value.threshold_value == null || !form.value.target_state) {
+    return
+  }
+
+  const payload = {
+    sensor_name: form.value.sensor_name,
+    operator: form.value.operator,
+    threshold_value: Number(form.value.threshold_value),
+    actuator_name: props.actuatorName,
+    target_state: form.value.target_state
+  }
+
+  try {
+    const createdRule = await api.post('/api/rules', payload)
+    emit('rule-created', createdRule)
+    openModal.value.close()
+    form.value = {
+      sensor_name: null,
+      operator: null,
+      threshold_value: null,
+      target_state: 'ON'
+    }
+  } catch (err) {
+    console.log(err)
+  }
 }
 
 
