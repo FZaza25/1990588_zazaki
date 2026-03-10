@@ -8,24 +8,33 @@ BROKER = "kafka:9092"
 SIMULATOR_URL = "http://simulator:8080"
 
 # Redis Connection for State Store and Pub/Sub
-cache = redis.Redis(host="mars_redis", port=6379, decode_responses=True)
+cache = redis.Redis(host="state_store", port=6379, decode_responses=True)
 
 def trigger_actuator(name, state):
-    """Sends a REST POST command to the simulator actuators"""
     try:
+        # Controllo anti-spam (Redis)
+        last_state_key = f"last_cmd:{name}"
+        if cache.get(last_state_key) == state: return
+
         url = f"{SIMULATOR_URL}/api/actuators/{name}"
-        payload = {"state": state}
-        response = requests.post(url, json=payload, timeout=2)
-        
+        response = requests.post(url, json={"state": state}, timeout=2)
+
         if response.status_code == 200:
-            print(f"[INFO] Actuator {name} successfully set to {state}", flush=True)
-        else:
-            print(f"[ERROR] Failed to set actuator {name}: Status {response.status_code}", flush=True)
+            cache.set(last_state_key, state) # Aggiorna cache
+            # AGGIORNA DATABASE (Sincronizzazione)
+            conn = get_db_connection()
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE actuators SET status = %s, last_update = CURRENT_TIMESTAMP WHERE name = %s",
+                    (state, name)
+                )
+                conn.commit()
+            conn.close()
+            print(f"[INFO] Actuator {name} set to {state}", flush=True)
     except Exception as e:
-        print(f"[ERROR] Actuator connection failure: {e}", flush=True)
+        print(f"[ERROR] Connection failure: {e}", flush=True)
 
-print("[SYSTEM] Initializing Rule Engine service...", flush=True)
-
+        
 try:
     consumer = KafkaConsumer(
         TOPIC,
