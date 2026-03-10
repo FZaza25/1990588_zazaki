@@ -8,7 +8,7 @@
    `docker run --rm -p 8080:8080 mars-iot-simulator:multiarch_v1`
 
 3. Start full stack:
-   docker compose up --build
+   docker compose up --build or docker compose up -d --build for detached mode
 
 Simulator: http://localhost:8080
 
