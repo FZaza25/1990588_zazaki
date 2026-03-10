@@ -176,7 +176,6 @@ IF <sensor_name> <operator> <value> [unit] THEN set <actuator_name> to ON|OFF
 
 **Acceptance Criteria:**
 - Delete button next to each rule in table
-- Confirmation dialog before deletion
 - Rule removed from database
 - Rule engine stops evaluating deleted rule immediately
 
@@ -250,9 +249,8 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 
 **Acceptance Criteria:**
 - Dashboard section lists all actuators with ON/OFF badges
-- Status polled from `/api/actuators` every 10 seconds
+- Status polled from `/api/actuators` every 5 if auto is selected seconds
 - Badge colors: green (ON), gray (OFF)
-- Last updated timestamp displayed
 
 ---
 
