@@ -17,7 +17,7 @@ The platform follows an **Event-Driven Microservices Architecture** with the fol
 
 - **IoT Simulator** (`mars-iot-simulator:multiarch_v1`): Simulates Mars habitat sensors and actuators on port 8080
 - **Ingestion & Normalization Service**: Polls REST sensors and consumes telemetry streams, normalizes data, publishes to message broker
-- **Message Broker** (Kafka/RabbitMQ): Decouples services via pub/sub pattern
+- **Message Broker** (Kafka): Decouples services via pub/sub pattern
 - **Automation Rule Engine**: Consumes events, evaluates rules, triggers actuators, maintains in-memory state cache
 - **Database** (SQLite/PostgreSQL): Persists automation rules
 - **API Gateway**: Exposes REST APIs for frontend, manages WebSocket connections
@@ -37,16 +37,24 @@ All services are containerized with Docker and orchestrated via `docker-compose`
 ### Standard Event Schema
 To decouple the business logic from the specific hardware dialects provided by the simulator's OpenAPI, the Ingestion Service flattens all incoming data (from both REST and Telemetry streams) into a single, predictable JSON Standard Event Schema before publishing to the message broker:
 {
-  "sensor_id": "string",
+  "sensor_id": "string",          // id 'pulito', es: 'greenhouse_temperature', 'solar_array'
+  "source_id": "string",          // id sorgente completo, es: 'mars/telemetry/solar_array'
+  "series_id": "string",          // combinazione sensor_id + metric, es: 'solar_array:power'
+  "metric": "string",             // tipo di misura, es: 'power', 'temperature', 'co2ppm'
   "timestamp": "string (ISO 8601)",
-  "metric": "string",
   "value": "number or string",
   "unit": "string",
-  "status": "string (ok/warning)",
-  "subsystem": "string (optional)",
-  "loop": "string (optional)",
-  "airlock_id": "string (optional)"
+  "type": "string (schema type, es: rest.scalar.v1, topic.power.v1)",
+  "status": "string (ok / warning / error)",
+  "tags": {
+    "subsystem": "string (optional)",
+    "system": "string (optional)",
+    "segment": "string (optional)",
+    "loop": "string (optional)",
+    "airlock_id": "string (optional)"
+  }
 }
+Nota: Nel Rule Engine, sensor_name usato dalle regole corrisponde a sensor_id normalizzato (es. "greenhouse_temperature", "co2_hall", "solar_array").
 This guarantees that downstream services (Rule Engine and Dashboard) can process any event uniformly, regardless of its origin.
 
 ### Rule Model
@@ -75,7 +83,7 @@ Rules are persisted in a relational database using the following schema mapping 
 **So that** I can monitor critical environmental parameters without manual intervention
 
 **Acceptance Criteria:**
-- System polls all REST sensors listed in `/api/state` endpoint
+- System polls all required REST sensors exposed by the simulator via /api/sensors/{sensor_name}, as configured in the ingestion service (rest_sensors list).
 - Polling interval configurable (default: 5 seconds)
 - Data successfully published to message broker
 
@@ -87,9 +95,14 @@ Rules are persisted in a relational database using the following schema mapping 
 **So that** I can receive asynchronous updates from critical systems (solar array, radiation, life support)
 
 **Acceptance Criteria:**
-- System subscribes to all topics from `ws://localhost:8000/ws/telemetry`
-- Connection reconnects automatically on failure
-- Telemetry data parsed and forwarded to message broker
+
+
+
+- Ingestion service subscribes via SSE to all simulator telemetry topics at /api/telemetry/stream/{topic_name} (list defined in telemetry_topics).
+- Normalized telemetry events are published to Kafka topic "mars.telemetry.normalized".
+- API Gateway subscribes to Redis channel "mars_telemetry_stream" and forwards telemetry to the frontend WebSocket at ws://localhost:8000/ws/telemetry.
+- Connection is re-established automatically on failure.
+
 
 ---
 
@@ -112,11 +125,13 @@ Rules are persisted in a relational database using the following schema mapping 
 **So that** the system follows event-driven architecture and services are decoupled
 
 **Acceptance Criteria:**
-- Broker configured in `docker-compose.yml`
-- Ingestion service publishes to `sensor.events` topic
-- Rule engine consumes from `sensor.events` topic
-- Frontend subscribes to `state.updates` topic
-- Messages persist during service restarts
+- Broker (Kafka) configured in docker-compose.yml.
+- Ingestion service publishes all normalized events to Kafka topic "mars.telemetry.normalized".
+- Rule engine consumes from "mars.telemetry.normalized".
+- API Gateway publishes real-time updates to Redis channels: "mars_telemetry_stream" (telemetry), "rules_update" (rule changes), "actuator_updates" (actuator state).
+- Frontend consumes current state via REST /api/state and real-time telemetry via WebSocket /ws/telemetry.
+
+
 
 ---
 
@@ -236,7 +251,8 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 
 **Acceptance Criteria:**
 - Toggle switch for each actuator: `cooling_fan`, `entrance_humidifier`, `hall_ventilation`, `habitat_heater`
-- Switch sends PATCH to `/api/actuators/{actuatorName}/mode` with `{"state": "ON"}` or `{"state": "OFF"}`
+- Mode toggle sends PATCH to /api/actuators/{actuatorName}/mode with body {"mode": "AUTO"} or {"mode": "MANUAL"}.
+- ON/OFF toggle sends PATCH to /api/actuators/{actuatorName}/status with body {"status": "ON"} or {"status": "OFF"}; the API Gateway forwards {"state": "ON"/"OFF"} to the simulator.
 - Current state fetched on dashboard load from `/api/actuators`
 - Switch disabled during API call (loading state)
 
