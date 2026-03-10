@@ -54,19 +54,21 @@ onMounted(() => {
     },
     onError: (e) => { console.error('WS error', e) },
     onMessage: (evt) => {
-    // console.log('WS message', evt)
+    console.log('WS message', evt)
       if (!isTelemetryEvent(evt)) return
-      if (!(evt.source_id in stream.streamsList)) return
+      const sourceId = evt.source_id?.replace('mars/telemetry/', '') ?? evt.source_id
+      if (!sourceId || !(sourceId in stream.streamsList)) return
 
-      stream.streamsList[evt.source_id] = {
-        ...stream.streamsList[evt.source_id],
+      stream.streamsList[sourceId] = {
+        ...stream.streamsList[sourceId],
         [evt.metric]: {
           ...evt,
+          source_id: sourceId,
         },
-        icon: stream.streamsList[evt.source_id].icon,
+        icon: stream.streamsList[sourceId].icon,
       }
 
-      const sourceCharts = stream.charts?.[evt.source_id]
+      const sourceCharts = stream.charts?.[sourceId]
       if (!sourceCharts || !(evt.metric in sourceCharts)) return
 
       const rawValue = evt.value
@@ -80,12 +82,12 @@ onMounted(() => {
         const nextSeries = [...currentMetricChart, normalizedValue]
         if (nextSeries.length > CHART_MAX_POINTS) nextSeries.shift()
 
-        stream.charts[evt.source_id] = {
+        stream.charts[sourceId] = {
           ...sourceCharts,
           [evt.metric]: nextSeries
         }
       } else {
-        stream.charts[evt.source_id] = {
+        stream.charts[sourceId] = {
           ...sourceCharts,
           [evt.metric]: normalizedValue
         }
