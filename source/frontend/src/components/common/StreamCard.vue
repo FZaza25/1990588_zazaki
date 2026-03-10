@@ -4,16 +4,16 @@
       <div  class="d-flex align-center justify-lg-space-between justify-center flex-wrap">
         <v-icon :icon="props.icon" size="40" class="mr-2"/>
         <h2 v-if="hasStreamTitle">{{ t('stream_name.' + props.title) }}</h2>
-        <v-progress-circular v-else indeterminate color="primary" size="22" width="2" />
+        <v-progress-circular v-else indeterminate color="primary" size="26" width="2" />
 
       </div>
       <div class="d-flex justify-center text-size-large">
         <div  class="d-flex justify-lg-space-between justify-center w-100 align-center">
           <div class="d-flex flex-column">
             <h2 v-if="hasMetricKey">{{ t('metrics.' + metricKey) }}</h2>
-            <v-progress-circular v-else indeterminate color="primary" size="22" width="2" />
+            <v-progress-circular v-else indeterminate color="primary" class="mb-2" size="26" width="2" />
             <h2 v-if="hasMetricValue">{{ metricDisplayValue }}</h2>
-            <v-progress-circular v-else indeterminate color="primary" size="22" width="2" />
+            <v-progress-circular v-else indeterminate color="primary" size="26" width="2" />
           </div>
           <div class="d-flex flex-column h-100 py-4" :class="metrics.length > 1?'justify-space-between':'justify-end'">
             <v-icon v-if="metrics.length >1" icon="mdi-swap-horizontal" @click="()=>changeMetrics()" class="icon-hover ml-2" size="40"/>
