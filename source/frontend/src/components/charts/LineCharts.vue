@@ -41,6 +41,12 @@ const data = computed(() => ({
   ]
 }))
 
+function formatYValue(value) {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return value
+  return n.toFixed(2).replace(/\.?0+$/, '')
+}
+
 const options = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
@@ -52,14 +58,14 @@ const options = computed(() => ({
     },
     y: {
       ticks: {
-        callback: (v) => `${v} ${props.yUnit}`.trim()
+        callback: (v) => `${formatYValue(v)} ${props.yUnit}`.trim()
       }
     }
   },
   plugins: {
     tooltip: {
       callbacks: {
-        label: (ctx) => `${ctx.parsed.y} ${props.yUnit}`.trim()
+        label: (ctx) => `${formatYValue(ctx.parsed.y)} ${props.yUnit}`.trim()
       }
     },
     legend: {
@@ -69,4 +75,3 @@ const options = computed(() => ({
   }
 }))
 </script>
-
