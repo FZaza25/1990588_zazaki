@@ -305,7 +305,7 @@ US-06, US-07, US-08, US-10, US-11, US-12, US-13
 Displays cards/charts/tables, supports rule CRUD from UI, and actuator manual control.
 
 ### PERSISTENCE EVALUATION
-Frontend local state persistence via Pinia persistence plugin.
+Frontend local state persistence via Pinia.
 
 ### EXTERNAL SERVICES CONNECTIONS
 - API Gateway REST (`http://localhost:8000`)
