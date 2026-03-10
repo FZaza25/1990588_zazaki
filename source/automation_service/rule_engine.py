@@ -34,6 +34,17 @@ def trigger_actuator(name, state):
             print(f"[INFO] Attuatore {name} impostato correttamente a {state}", flush=True)
             # 4. SALVIAMO NELLA MEMORIA (Redis) che ora la ventola è ON
             cache.set(last_state_key, state)
+            try:
+                conn = get_db_connection()
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "UPDATE actuators SET status = %s, last_update = CURRENT_TIMESTAMP WHERE name = %s",
+                        (state, name)
+                    )
+                    conn.commit()
+                conn.close()
+            except Exception as e:
+                print(f"[ERROR] Database update failed in rule_engine: {e}", flush=True)
         else:
             print(f"[ERROR] Il simulatore ha rifiutato il comando: Status {response.status_code}", flush=True)
             
