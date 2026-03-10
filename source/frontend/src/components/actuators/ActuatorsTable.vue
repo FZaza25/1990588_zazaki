@@ -4,6 +4,7 @@
       <h2 >{{ t('actuators.'+props.actuatorName) }}</h2>
       <div class="tooltip-container d-flex bg-background align-center justify-space-between w-50 rounded-lg my-5">
         <v-switch
+            :disabled="props.loading"
             v-model="auto"
             :label="auto? 'Automatic':'Manual'"
             color="orange"
@@ -11,7 +12,7 @@
             hide-details
         />
         <v-switch
-            :disabled="auto"
+            :disabled="auto || props.loading"
             v-model="isOn"
             :label="isOn? 'ON':'OFF'"
             color="orange"
@@ -27,6 +28,7 @@
     </div>
 
     <v-data-table
+        v-if="!props.loading"
         :headers="props.header"
         :items="props.items"
         class="actuators-data-table rounded-lg"
@@ -61,6 +63,9 @@
         </div>
       </template>
     </v-data-table>
+    <div v-else class="actuators-data-table bg-background rounded-lg d-flex justify-center align-center loading-state">
+      <v-progress-circular indeterminate color="primary" size="28" width="3" />
+    </div>
   </div>
   <CentralModal ref="openModal">
     <template #header>
@@ -157,6 +162,10 @@ const props = defineProps({
   actuatorState: {
     type: Object,
     required: true
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -282,6 +291,10 @@ function deleteRule(ruleId) {
 .actuators-data-table {
   border: 3px solid vars.$orange;
   overflow: hidden;
+}
+
+.loading-state {
+  min-height: 220px;
 }
 
 .manual-mode .actuators-data-table {

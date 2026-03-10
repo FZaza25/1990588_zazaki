@@ -3,6 +3,7 @@
     <ActuatorsTable
         actuator-name="cooling_fan"
         :actuator-state="actuatorsState.cooling_fan"
+        :loading="rulesLoading"
         :header="headers"
         :items="tables.cooling_fan"
         @update-mode="(value) => updateActuatorMode('cooling_fan', value)"
@@ -14,6 +15,7 @@
     <ActuatorsTable
         actuator-name="habitat_heater"
         :actuator-state="actuatorsState.habitat_heater"
+        :loading="rulesLoading"
         :header="headers"
         :items="tables.habitat_heater"
         @update-mode="(value) => updateActuatorMode('habitat_heater', value)"
@@ -25,6 +27,7 @@
     <ActuatorsTable
         actuator-name="entrance_humidifier"
         :actuator-state="actuatorsState.entrance_humidifier"
+        :loading="rulesLoading"
         :header="headers"
         :items="tables.entrance_humidifier"
         @update-mode="(value) => updateActuatorMode('entrance_humidifier', value)"
@@ -36,6 +39,7 @@
     <ActuatorsTable
         actuator-name="hall_ventilation"
         :actuator-state="actuatorsState.hall_ventilation"
+        :loading="rulesLoading"
         :header="headers"
         :items="tables.hall_ventilation"
         @update-mode="(value) => updateActuatorMode('hall_ventilation', value)"
@@ -65,6 +69,7 @@ const actuatorsState = ref({
   hall_ventilation: null,
   entrance_humidifier: null,
 })
+const rulesLoading = ref(true)
 
 const headers = [
   { title: "Sensor", key: "sensor_name" },
@@ -195,6 +200,8 @@ onMounted(async ()=>{
 
   }catch(err){
     console.log(err);
+  } finally {
+    rulesLoading.value = false
   }
 })
 
