@@ -1,4 +1,3 @@
-
 import json, redis, time, sys
 from kafka import KafkaConsumer
 from persistence_layer import get_db_connection
@@ -8,22 +7,20 @@ TOPIC = "mars.telemetry.normalized"
 BROKER = "kafka:9092"
 SIMULATOR_URL = "http://simulator:8080"
 
-# Redis Connection for State Store and Pub/Sub
+# Connessione a Redis (Nome host allineato al docker-compose)
 cache = redis.Redis(host="state_store", port=6379, decode_responses=True)
 
 def trigger_actuator(name, state):
-    """Invia il comando solo se lo stato è diverso dall'ultimo inviato"""
+    """Invia il comando al simulatore e sincronizza Database e Cache"""
     try:
-        # 1. Chiediamo a Redis: "Qual è l'ultimo comando che ho inviato a questa ventola?"
+        # 1. Controllo Anti-Spam (Redis)
         last_state_key = f"last_cmd:{name}"
         last_sent_state = cache.get(last_state_key)
         
-        # 2. Se l'ultimo comando è uguale a quello di adesso, ci fermiamo qui.
         if last_sent_state == state:
-            # Non stampiamo nulla per non intasare i log, usciamo e basta
             return 
 
-        # 3. Se invece lo stato è diverso (es. prima era OFF e ora è ON), inviamo il comando
+        # 2. Invio al simulatore
         url = f"{SIMULATOR_URL}/api/actuators/{name}"
         payload = {"state": state}
         
@@ -31,9 +28,12 @@ def trigger_actuator(name, state):
         response = requests.post(url, json=payload, timeout=2)
         
         if response.status_code == 200:
-            print(f"[INFO] Attuatore {name} impostato correttamente a {state}", flush=True)
-            # 4. SALVIAMO NELLA MEMORIA (Redis) che ora la ventola è ON
+            print(f"[INFO] Attuatore {name} impostato a {state}", flush=True)
+            
+            # 3. Aggiorna Cache
             cache.set(last_state_key, state)
+            
+            # 4. Aggiorna Database (Sincronizzazione Dashboard)
             try:
                 conn = get_db_connection()
                 with conn.cursor() as cur:
@@ -44,12 +44,12 @@ def trigger_actuator(name, state):
                     conn.commit()
                 conn.close()
             except Exception as e:
-                print(f"[ERROR] Database update failed in rule_engine: {e}", flush=True)
+                print(f"[ERROR] Database update failed: {e}", flush=True)
         else:
-            print(f"[ERROR] Il simulatore ha rifiutato il comando: Status {response.status_code}", flush=True)
+            print(f"[ERROR] Il simulatore ha rifiutato il comando: {response.status_code}", flush=True)
             
     except Exception as e:
-        print(f"[ERROR] Connessione al simulatore fallita: {e}", flush=True)
+        print(f"[ERROR] Errore connessione simulatore: {e}", flush=True)
 
 print("[SYSTEM] Initializing Rule Engine service...", flush=True)
 
@@ -66,39 +66,28 @@ try:
 
     for message in consumer:
         data = message.value
-        
-        # 1. DATA EXTRACTION
         source_id = data.get('source_id', '')
-        series_id = data.get('series_id', '')
         val = data.get('value')
         metric = data.get('metric', 'default')
 
         if source_id and val is not None:
-            
-            # --- 2. ROUTING LOGIC & PREFIX REMOVAL ---
-            is_telemetry = source_id.startswith("mars/telemetry/")
             clean_id = source_id.replace("mars/telemetry/", "")
+            is_telemetry = source_id.startswith("mars/telemetry/")
             
             data['sensor_id'] = clean_id
-            data['source_id'] = clean_id
-            data['metric'] = metric
-
-            # --- 3. CHANNEL DISTRIBUTION ---
+            
+            # Distribuzione canali
             if is_telemetry:
-                # STREAM CHANNEL: Per i grafici real-time
                 cache.publish("mars_telemetry_stream", json.dumps(data))
-                print(f"[DEBUG] Telemetry Stream: {clean_id} | {metric}: {val}", flush=True)
             else:
-                # REST CHANNEL: Per lo stato attuale (polling)
                 cache.set(f"sensor:{clean_id}:{metric}", json.dumps(data))
-                print(f"[DEBUG] Sensor State Updated: {clean_id} | {metric} {val}", flush=True)
 
-            # --- 4. AUTOMATION RULES ENGINE (CON CONTROLLO MODE) ---
+            # --- LOGICA AUTOMAZIONE ---
             if isinstance(val, (int, float)):
                 try:
                     conn = get_db_connection()
                     with conn.cursor() as cur:
-                        # AGGIUNTA: JOIN con la tabella actuators per recuperare il campo 'mode'
+                        # JOIN per controllare la modalità (AUTO/MANUAL)
                         query = """
                             SELECT r.*, a.mode 
                             FROM automation_rules r
@@ -109,15 +98,13 @@ try:
                         rules = cur.fetchall()
                         
                         for rule in rules:
-                            # --- NUOVA LOGICA: Se l'attuatore è in MANUAL, il Rule Engine lo ignora ---
                             if rule['mode'] != 'AUTO':
-                                print(f"[SKIP] Rule for {rule['actuator_name']} ignored: Mode is MANUAL", flush=True)
                                 continue
 
                             op = rule['operator']
                             threshold = float(rule['threshold_value'])
-                            
                             triggered = False
+
                             if op == ">" and val > threshold: triggered = True
                             elif op == "<" and val < threshold: triggered = True
                             elif op == "==" and val == threshold: triggered = True
@@ -125,7 +112,7 @@ try:
                             elif op == "<=" and val <= threshold: triggered = True
                             
                             if triggered:
-                                print(f"[ALERT] Automation triggered: {clean_id} ({metric}) {val} {op} {threshold}", flush=True)
+                                print(f"[ALERT] Automation triggered: {clean_id} {val} {op} {threshold}", flush=True)
                                 trigger_actuator(rule['actuator_name'], rule['target_state'])
                     conn.close()
                 except Exception as e:

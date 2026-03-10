@@ -134,15 +134,25 @@ def delete_rule(rule_id: int):
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
+            # Recuperiamo l'attuatore associato prima di cancellare
+            cur.execute("SELECT actuator_name FROM automation_rules WHERE id = %s", (rule_id,))
+            rule = cur.fetchone()
+            if not rule:
+                raise HTTPException(status_code=404, detail="Regola non trovata")
+            
+            actuator_name = rule['actuator_name']
+            
+            # Cancelliamo la regola
             cur.execute("DELETE FROM automation_rules WHERE id = %s RETURNING *;", (rule_id,))
             res = cur.fetchone()
             conn.commit()
-            if not res:
-                raise HTTPException(status_code=404, detail="Regola non trovata")
             
-            # Notifica il frontend e il rule_engine della cancellazione
+            # PULIZIA CACHE: Il Rule Engine resetta la sua memoria interna
+            # ma NON inviamo alcun comando OFF al simulatore.
+            cache.delete(f"last_cmd:{actuator_name}")
+            
             cache.publish("rules_update", json.dumps({"action": "delete", "id": rule_id}))
-            return {"message": "Regola eliminata", "rule": res}
+            return {"message": "Regola eliminata, attuatore invariato", "rule": res}
     finally:
         conn.close()
 
@@ -152,7 +162,13 @@ def update_rule(rule_id: int, payload: dict):
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            # Costruiamo la query dinamicamente in base a cosa invia Andrea
+            # Recuperiamo l'attuatore
+            cur.execute("SELECT actuator_name FROM automation_rules WHERE id = %s", (rule_id,))
+            old_rule = cur.fetchone()
+            if not old_rule:
+                raise HTTPException(status_code=404, detail="Regola non trovata")
+
+            # Aggiornamento dinamico
             fields = [f"{k} = %s" for k in payload.keys()]
             values = list(payload.values())
             values.append(rule_id)
@@ -162,10 +178,10 @@ def update_rule(rule_id: int, payload: dict):
             res = cur.fetchone()
             conn.commit()
             
-            if not res:
-                raise HTTPException(status_code=404, detail="Regola non trovata")
+            # RESET CACHE: Fondamentale per far sì che il Rule Engine 
+            # valuti la nuova regola solo al prossimo pacchetto di dati.
+            cache.delete(f"last_cmd:{old_rule['actuator_name']}")
             
-            # Notifica il cambiamento
             cache.publish("rules_update", json.dumps({"action": "update", "data": res}, cls=MarsEncoder))
             return res
     finally:
