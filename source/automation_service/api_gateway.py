@@ -102,19 +102,26 @@ def create_rule(rule: dict):
 # ============================================================
 @app.get("/api/actuators")
 def get_actuators():
-    """
-    US-11, US-13: Actuator Status Monitor
-    Dashboard deve poter leggere stato attuale di tutti gli attuatori
-    """
     try:
-        response = requests.get("http://simulator:8080/api/actuators", timeout=3)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"ERROR: Failed to fetch actuators from simulator: {e}")
-        raise HTTPException(status_code=502, detail="Failed to communicate with simulator")
+        # Proviamo a connetterci
+        conn = get_db_connection()
+        # Usiamo RealDictCursor per avere i nomi delle colonne
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM actuators ORDER BY name ASC")
+            res = cur.fetchall()
+        conn.close()
         
+        # Usiamo il MarsEncoder per evitare crash sui tipi di dati
+        return json.loads(json.dumps(res, cls=MarsEncoder))
+        
+    except Exception as e:
+        # Questo log apparirà nel terminale di Docker
+        print(f"DEBUG ERROR: {str(e)}", flush=True)
+        # Questo lo vedrai nella risposta della curl
+        raise HTTPException(status_code=500, detail=f"Errore Reale: {str(e)}")
 
+
+        
 
 # --- 4. ACTUATOR CONTROL (HTTP DISPATCH) Validazione + Redis publish in manual_control ---
 @app.post("/api/actuators/{name}/dispatch")
