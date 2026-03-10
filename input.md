@@ -3,7 +3,7 @@
 **Laboratory of Advanced Programming 2025/2026**  
 **Team:** Zazaki  
 **Leader Matricola:** 1990588  
-**Members:** Federico Zaza, Giulio Schintu, Andrea Pulsoni
+**Members:** Federico Zaza, Giulio Maria Schintu, Andrea Pulsoni
 
 ---
 
