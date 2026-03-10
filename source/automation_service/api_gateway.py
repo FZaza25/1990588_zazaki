@@ -89,6 +89,85 @@ def patch_actuator_mode(name: str, payload: dict):
             return res
     finally: conn.close()
 
+
+@app.patch("/api/actuators/{name}/status")
+def patch_actuator_status(name: str, payload: dict):
+    new_status = payload.get("status")
+    if new_status not in ["ON", "OFF"]:
+        raise HTTPException(status_code=400, detail="Usa 'ON' o 'OFF'")
+    
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            # 1. Aggiorna lo stato nel DB Postgres
+            cur.execute("""
+                UPDATE actuators 
+                SET status = %s, last_update = CURRENT_TIMESTAMP 
+                WHERE name = %s RETURNING *
+            """, (new_status, name))
+            res = cur.fetchone()
+            conn.commit()
+            
+            if not res:
+                raise HTTPException(status_code=404, detail="Attuatore non trovato")
+            
+            # 2. Invia il comando al simulatore (Host: simulator)
+            try:
+                print(f"DEBUG: Invio comando a simulator: {name} -> {new_status}", flush=True)
+                sim_url = f"http://simulator:8080/api/actuators/{name}"
+                r = requests.post(sim_url, json={"status": new_status}, timeout=2)
+                print(f"DEBUG: Risposta simulator: {r.status_code}", flush=True)
+            except Exception as e:
+                print(f"CRITICAL: Errore simulatore: {e}", flush=True)
+
+            # 3. Notifica via Redis
+            cache.publish("actuator_updates", json.dumps(res, cls=MarsEncoder))
+            return res
+    finally:
+        conn.close()
+
+@app.delete("/api/rules/{rule_id}")
+def delete_rule(rule_id: int):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM automation_rules WHERE id = %s RETURNING *;", (rule_id,))
+            res = cur.fetchone()
+            conn.commit()
+            if not res:
+                raise HTTPException(status_code=404, detail="Regola non trovata")
+            
+            # Notifica il frontend e il rule_engine della cancellazione
+            cache.publish("rules_update", json.dumps({"action": "delete", "id": rule_id}))
+            return {"message": "Regola eliminata", "rule": res}
+    finally:
+        conn.close()
+
+
+@app.patch("/api/rules/{rule_id}")
+def update_rule(rule_id: int, payload: dict):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            # Costruiamo la query dinamicamente in base a cosa invia Andrea
+            fields = [f"{k} = %s" for k in payload.keys()]
+            values = list(payload.values())
+            values.append(rule_id)
+            
+            query = f"UPDATE automation_rules SET {', '.join(fields)} WHERE id = %s RETURNING *;"
+            cur.execute(query, values)
+            res = cur.fetchone()
+            conn.commit()
+            
+            if not res:
+                raise HTTPException(status_code=404, detail="Regola non trovata")
+            
+            # Notifica il cambiamento
+            cache.publish("rules_update", json.dumps({"action": "update", "data": res}, cls=MarsEncoder))
+            return res
+    finally:
+        conn.close()
+
 @app.websocket("/ws/telemetry")
 async def websocket_telemetry(websocket: WebSocket):
     await websocket.accept()
