@@ -8,6 +8,7 @@
         @update-mode="(value) => updateActuatorMode('cooling_fan', value)"
         @update-status="(value) => updateActuatorStatus('cooling_fan', value)"
         @rule-created="appendRule"
+        @delete-rule="deleteRule"
     />
     <ActuatorsTable
         actuator-name="habitat_heater"
@@ -17,6 +18,7 @@
         @update-mode="(value) => updateActuatorMode('habitat_heater', value)"
         @update-status="(value) => updateActuatorStatus('habitat_heater', value)"
         @rule-created="appendRule"
+        @delete-rule="deleteRule"
     />
     <ActuatorsTable
         actuator-name="entrance_humidifier"
@@ -26,6 +28,7 @@
         @update-mode="(value) => updateActuatorMode('entrance_humidifier', value)"
         @update-status="(value) => updateActuatorStatus('entrance_humidifier', value)"
         @rule-created="appendRule"
+        @delete-rule="deleteRule"
     />
     <ActuatorsTable
         actuator-name="hall_ventilation"
@@ -35,6 +38,7 @@
         @update-mode="(value) => updateActuatorMode('hall_ventilation', value)"
         @update-status="(value) => updateActuatorStatus('hall_ventilation', value)"
         @rule-created="appendRule"
+        @delete-rule="deleteRule"
     />
   </div>
 </template>
@@ -108,6 +112,19 @@ function appendRule(rule) {
   const actuatorKey = rule?.actuator_name
   if (!actuatorKey || !(actuatorKey in tables.value)) return
   tables.value[actuatorKey].push(rule)
+}
+
+async function deleteRule(ruleId) {
+  if (!ruleId) return
+
+  try {
+    await api.delete(`/api/rules/${ruleId}`)
+    Object.keys(tables.value).forEach((actuatorKey) => {
+      tables.value[actuatorKey] = tables.value[actuatorKey].filter((rule) => rule.id !== ruleId)
+    })
+  } catch (err) {
+    console.log(err)
+  }
 }
 
 onMounted(async ()=>{

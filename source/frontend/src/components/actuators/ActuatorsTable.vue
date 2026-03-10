@@ -43,7 +43,13 @@
           </v-tooltip>
           <v-tooltip text="Delete rule">
             <template v-slot:activator="{ props }">
-              <v-icon icon="mdi-trash-can-outline" class="cursor-pointer" v-bind="props" size="32"/>
+              <v-icon
+                  icon="mdi-trash-can-outline"
+                  class="cursor-pointer"
+                  v-bind="props"
+                  size="32"
+                  @click="deleteRule(item.id)"
+              />
             </template>
           </v-tooltip>
         </div>
@@ -148,7 +154,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update-mode', 'update-status', 'rule-created'])
+const emit = defineEmits(['update-mode', 'update-status', 'rule-created', 'delete-rule'])
 
 const {t} = useI18n();
 const sensorsStore = useSensorsStore()
@@ -215,6 +221,11 @@ async function createRule() {
   } catch (err) {
     console.log(err)
   }
+}
+
+function deleteRule(ruleId) {
+  if (!ruleId) return
+  emit('delete-rule', ruleId)
 }
 
 
