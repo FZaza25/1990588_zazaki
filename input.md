@@ -21,7 +21,7 @@ The platform follows an **Event-Driven Microservices Architecture** with the fol
 - **Automation Rule Engine**: Consumes events, evaluates rules, triggers actuators, maintains in-memory state cache
 - **Database** (SQLite/PostgreSQL): Persists automation rules
 - **API Gateway**: Exposes REST APIs for frontend, manages WebSocket connections
-- **Frontend Dashboard** (React): Real-time monitoring, manual actuator control, rule management
+- **Frontend Dashboard** (Vue.js): Real-time monitoring, manual actuator control, rule management
 
 **Data Flow:**
 ```
@@ -75,9 +75,8 @@ Rules are persisted in a relational database using the following schema mapping 
 **So that** I can monitor critical environmental parameters without manual intervention
 
 **Acceptance Criteria:**
-- System polls all REST sensors listed in `/api/sensors` endpoint
+- System polls all REST sensors listed in `/api/state` endpoint
 - Polling interval configurable (default: 5 seconds)
-- Failed polls are logged and retried
 - Data successfully published to message broker
 
 ---
@@ -88,14 +87,9 @@ Rules are persisted in a relational database using the following schema mapping 
 **So that** I can receive asynchronous updates from critical systems (solar array, radiation, life support)
 
 **Acceptance Criteria:**
-- System subscribes to all topics from `/api/telemetry/topics`
+- System subscribes to all topics from `ws://localhost:8000/ws/telemetry`
 - Connection reconnects automatically on failure
 - Telemetry data parsed and forwarded to message broker
-- Stream latency < 1 second
-
-**Non-Functional Requirements:**
-- Stream latency: < 1 second
-- Reconnection delay: 2 seconds with exponential backoff
 
 ---
 
@@ -109,9 +103,6 @@ Rules are persisted in a relational database using the following schema mapping 
 - Telemetry topics (power.v1, environment.v1, thermalloop.v1, airlock.v1) mapped to unified schema
 - Schema includes: `event_id`, `sensor_name`, `timestamp`, `value`, `unit`, `source_type`
 - Normalization documented in Section 3
-
-**Non-Functional Requirements:**
-- Normalization overhead: < 10ms per event
 
 ---
 
@@ -140,10 +131,6 @@ Rules are persisted in a relational database using the following schema mapping 
 - REST API `/api/state` exposes current state
 - Cache survives rule engine restarts (rehydrated from last events)
 
-**Non-Functional Requirements:**
-- API response time: < 50ms
-- Cache memory footprint: < 100MB
-
 ---
 
 ### Automation Rule Engine (4 stories)
@@ -168,10 +155,6 @@ IF <sensor_name> <operator> <value> [unit] THEN set <actuator_name> to ON|OFF
 - `IF entrance_humidity < 30 % THEN set entrance_humidifier to ON`
 - `IF corridor_pressure < 95 kPa THEN set hall_ventilation to OFF`
 
-**Non-Functional Requirements:**
-- Form validation: instant client-side feedback
-- Database insert latency: < 200ms
-
 ---
 
 #### US-07: List Active Rules
@@ -180,14 +163,9 @@ IF <sensor_name> <operator> <value> [unit] THEN set <actuator_name> to ON|OFF
 **So that** I can audit the system's autonomous behavior
 
 **Acceptance Criteria:**
-- Table displays: Rule ID, Condition (full IF-THEN statement), Created Date
+- Table displays: Sensor, Sensor value, Operator, Threshold, Target state and action
 - Rules fetched from persistent database
 - Table updates in real-time when rules added/deleted
-- Empty state message if no rules exist
-
-**Non-Functional Requirements:**
-- Table load time: < 500ms
-- Real-time update latency: < 1 second
 
 ---
 
@@ -202,10 +180,6 @@ IF <sensor_name> <operator> <value> [unit] THEN set <actuator_name> to ON|OFF
 - Rule removed from database
 - Rule engine stops evaluating deleted rule immediately
 
-**Non-Functional Requirements:**
-- Deletion latency: < 300ms
-- No downtime for remaining rules during deletion
-
 ---
 
 #### US-09: Rule Evaluation Engine
@@ -219,10 +193,6 @@ IF <sensor_name> <operator> <value> [unit] THEN set <actuator_name> to ON|OFF
 - Evaluate condition: compare `event.value` with rule threshold using specified operator
 - If condition TRUE: send POST to `/api/actuators/{actuator_name}` with body `{"state": "ON"}` or `{"state": "OFF"}`
 - Log all rule evaluations with timestamp and result (for debugging)
-
-**Non-Functional Requirements:**
-- Evaluation latency: < 100ms per rule
-- Support for concurrent rule evaluations (thread-safe)
 
 **Example Flow:**
 ```
@@ -242,14 +212,8 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 **So that** I can monitor habitat conditions at a glance
 
 **Acceptance Criteria:**
-- Dashboard displays cards for each sensor: name, value, unit, timestamp
+- Dashboard displays cards for each sensor: name, value, unit, charts
 - Values update in real-time via WebSocket/SSE
-- Color-coded status: green (normal), yellow (warning), red (critical)
-- Sensors grouped by category: Temperature, Pressure, Humidity, Air Quality, Power, Life Support
-
-**Non-Functional Requirements:**
-- Update frequency: real-time (< 1 second latency)
-- UI responsiveness: 60 FPS rendering
 
 ---
 
@@ -264,11 +228,6 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 - Y-axis: sensor value
 - Chart updates every 5 seconds
 - Tooltip shows exact value on hover
-
-**Non-Functional Requirements:**
-- Chart rendering: < 100ms
-- Data retention in browser: last 5 minutes (300 data points max)
-
 ---
 
 #### US-12: Manual Actuator Control
@@ -282,10 +241,6 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 - Current state fetched on dashboard load from `/api/actuators`
 - Switch disabled during API call (loading state)
 
-**Non-Functional Requirements:**
-- Toggle response time: < 500ms
-- Visual feedback: switch animates to new position
-
 ---
 
 #### US-13: Actuator Status Monitor
@@ -298,10 +253,6 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 - Status polled from `/api/actuators` every 10 seconds
 - Badge colors: green (ON), gray (OFF)
 - Last updated timestamp displayed
-
-**Non-Functional Requirements:**
-- Polling interval: 10 seconds
-- UI update latency: < 100ms
 
 ---
 
@@ -318,10 +269,6 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 - Rule engine loads rules from DB on startup
 - **Test:** Create rule → `docker-compose restart` → rule still exists and evaluates correctly
 
-**Non-Functional Requirements:**
-- Database startup time: < 5 seconds
-- Rule loading latency: < 1 second
-
 ---
 
 #### US-15: One-Command Deployment
@@ -336,10 +283,6 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 - Simulator accessible at `http://localhost:8080`
 - Dashboard accessible at `http://localhost:3000`
 - No manual configuration steps required
-
-**Non-Functional Requirements:**
-- Total startup time: < 60 seconds
-- Zero manual intervention required
 
 ---
 
