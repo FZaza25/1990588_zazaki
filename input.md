@@ -236,7 +236,7 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 
 **Acceptance Criteria:**
 - Toggle switch for each actuator: `cooling_fan`, `entrance_humidifier`, `hall_ventilation`, `habitat_heater`
-- Switch sends PATCH to `/api/actuators/{actuator_name}` with `{"state": "ON"}` or `{"state": "OFF"}`
+- Switch sends PATCH to `/api/actuators/{actuatorName}/mode` with `{"state": "ON"}` or `{"state": "OFF"}`
 - Current state fetched on dashboard load from `/api/actuators`
 - Switch disabled during API call (loading state)
 
@@ -248,7 +248,7 @@ Action: POST http://localhost:8080/api/actuators/cooling_fan {"state": "ON"}
 **So that** I can verify physical hardware matches software commands
 
 **Acceptance Criteria:**
-- Dashboard section lists all actuators with ON/OFF badges
+- Dashboard section lists all actuators with ON/OFF switches
 - Status polled from `/api/actuators` every 5 if auto is selected seconds
 - Switch colors: orange (ON), gray (OFF)
 
