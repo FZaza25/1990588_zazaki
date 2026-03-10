@@ -48,7 +48,7 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from "vue";
+import {onMounted, onUnmounted, ref} from "vue";
 import {api} from "../../../api/Request.js";
 import ActuatorsTable from "../../../components/actuators/ActuatorsTable.vue";
 
@@ -73,6 +73,7 @@ const headers = [
   { title: "Target State", key: "target_state" },
   { title: "Actions", key: "actions" }
 ]
+let actuatorsPollingId = null
 
 function distributeRulesByActuator(rules = []) {
   Object.keys(tables.value).forEach((actuatorKey) => {
@@ -92,6 +93,32 @@ function handleActuators(actuators) {
   })
 }
 
+async function refreshActuatorsState() {
+  try {
+    const actuators = await api.get('/api/actuators')
+    handleActuators(actuators)
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+function hasAnyAutoActuator() {
+  return Object.values(actuatorsState.value).some((actuator) => actuator?.mode === 'AUTO')
+}
+
+function startAutoPollingIfNeeded() {
+  if (!hasAnyAutoActuator()) return
+  if (actuatorsPollingId) return
+  actuatorsPollingId = setInterval(async () => {
+    if (!hasAnyAutoActuator()) {
+      clearInterval(actuatorsPollingId)
+      actuatorsPollingId = null
+      return
+    }
+    await refreshActuatorsState()
+  }, 5000)
+}
+
 async function updateActuatorMode(actuatorName, isAuto) {
   const current = actuatorsState.value[actuatorName]
   if (!current) return
@@ -101,6 +128,10 @@ async function updateActuatorMode(actuatorName, isAuto) {
 
   try {
     actuatorsState.value[actuatorName] = await api.patch(`/api/actuators/${actuatorName}/mode`, {mode: nextMode})
+    if (isAuto) {
+      await refreshActuatorsState()
+    }
+    startAutoPollingIfNeeded()
   } catch (err) {
     console.log(err)
   }
@@ -152,8 +183,7 @@ async function deleteRule(ruleId) {
 
 onMounted(async ()=>{
   try{
-    const actuators = await api.get('/api/actuators')
-    handleActuators(actuators)
+    await refreshActuatorsState()
     const response = await api.get('/api/rules')
     const rules = Array.isArray(response)
       ? response
@@ -161,9 +191,17 @@ onMounted(async ()=>{
         ? response.data
         : []
     distributeRulesByActuator(rules)
+    startAutoPollingIfNeeded()
 
   }catch(err){
     console.log(err);
+  }
+})
+
+onUnmounted(() => {
+  if (actuatorsPollingId) {
+    clearInterval(actuatorsPollingId)
+    actuatorsPollingId = null
   }
 })
 

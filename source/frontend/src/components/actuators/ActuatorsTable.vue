@@ -1,5 +1,5 @@
 <template>
-  <div class="actuators-table">
+  <div class="actuators-table" :class="{ 'manual-mode': isManualMode }">
     <div class="d-flex justify-space-between">
       <h2 >{{ t('actuators.'+props.actuatorName) }}</h2>
       <div class="tooltip-container d-flex bg-background align-center justify-space-between w-50 rounded-lg my-5">
@@ -195,6 +195,7 @@ const isOn = computed({
     emit('update-status', Boolean(value))
   }
 })
+const isManualMode = computed(() => props.actuatorState?.mode === 'MANUAL')
 
 const openModal = ref(null);
 const modalTitle = computed(() =>
@@ -281,6 +282,11 @@ function deleteRule(ruleId) {
 .actuators-data-table {
   border: 3px solid vars.$orange;
   overflow: hidden;
+}
+
+.manual-mode .actuators-data-table {
+  opacity: 0.6;
+  filter: grayscale(0.65);
 }
 
 :deep(.actuators-data-table .v-data-table-header th),
