@@ -20,3 +20,6 @@ A distributed event-driven platform for monitoring and automating a simulated Ma
 ```bash
 docker load -i mars-iot-simulator-oci.tar
 docker compose up --build
+
+Simulator:
+https://drive.google.com/file/d/14Cou8XBTD-le7Gb9OHVjSJnf4tqa-aGn/view?usp=sharing
