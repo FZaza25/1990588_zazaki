@@ -54,7 +54,6 @@ onMounted(() => {
     },
     onError: (e) => { console.error('WS error', e) },
     onMessage: (evt) => {
-    console.log('WS message', evt)
       if (!isTelemetryEvent(evt)) return
       const sourceId = evt.source_id?.replace('mars/telemetry/', '') ?? evt.source_id
       if (!sourceId || !(sourceId in stream.streamsList)) return
