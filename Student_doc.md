@@ -1,13 +1,19 @@
 ### How to run the system
+1. Download .tar file from (provided by exam): https://drive.google.com/drive/folders/1Noa3Mp71Dao1QrZ4dyW2GvEAPnPUABZT
 
-1. One‑time prerequisite (provided by exam):
-   docker load -i mars-iot-simulator-oci.tar
+2. After download exec one-time:
 
-2. Start full stack:
+   `docker load -i mars-iot-simulator-oci.tar`
+
+   `docker run --rm -p 8080:8080 mars-iot-simulator:multiarch_v1`
+
+3. Start full stack:
    docker compose up --build
 
 Simulator: http://localhost:8080
+
 API Gateway: http://localhost:8000 (REST + WS)
+
 Dashboard: http://localhost:3000
 
 
