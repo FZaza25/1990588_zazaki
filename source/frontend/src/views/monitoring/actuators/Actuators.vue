@@ -88,8 +88,7 @@ async function updateActuatorMode(actuatorName, isAuto) {
   current.mode = nextMode
 
   try {
-    const updated = await api.patch(`/api/actuators/${actuatorName}/mode`, { mode: nextMode })
-    actuatorsState.value[actuatorName] = updated
+    actuatorsState.value[actuatorName] = await api.patch(`/api/actuators/${actuatorName}/mode`, {mode: nextMode})
   } catch (err) {
     console.log(err)
   }

@@ -51,6 +51,47 @@
     <template #header>
       <h1>Add a new rule for {{ t('actuators.' + props.actuatorName) }}</h1>
     </template>
+    <template #content>
+      <v-container fluid class="py-2">
+        <v-row>
+          <v-col cols="12" md="6">
+            <v-autocomplete
+                v-model="form.sensor_name"
+                label="Sensor"
+                :items="sensorOptions"
+                clearable
+                variant="outlined"
+            />
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-autocomplete
+                v-model="form.operator"
+                label="Operator"
+                :items="operatorOptions"
+                clearable
+                variant="outlined"
+            />
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field
+                v-model.number="form.threshold_value"
+                label="Threshold"
+                type="number"
+                variant="outlined"
+            />
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-autocomplete
+                v-model="form.target_state"
+                label="Target State"
+                :items="targetStateOptions"
+                clearable
+                variant="outlined"
+            />
+          </v-col>
+        </v-row>
+      </v-container>
+    </template>
     <template #footer>
       <div class="d-flex w-auto ga-4 justify-end">
         <v-btn
@@ -79,6 +120,7 @@
 import {useI18n} from "vue-i18n";
 import {computed, ref} from "vue";
 import CentralModal from "../common/CentralModal.vue";
+import {useSensorsStore} from "../../stores/sensors.js";
 
 const props = defineProps({
   actuatorName: {
@@ -102,6 +144,18 @@ const props = defineProps({
 const emit = defineEmits(['update-mode', 'update-status'])
 
 const {t} = useI18n();
+const sensorsStore = useSensorsStore()
+
+const operatorOptions = ['>', '<', '>=', '<=', '==', '!=']
+const targetStateOptions = ['ON', 'OFF']
+const sensorOptions = computed(() => Object.keys(sensorsStore.sensorsList || {}))
+
+const form = ref({
+  sensor_name: null,
+  operator: null,
+  threshold_value: null,
+  target_state: 'ON'
+})
 
 const auto = computed({
   get: () => props.actuatorState?.mode === 'AUTO',
