@@ -31,6 +31,7 @@ import AirQualityPM25 from "../../../components/indoor_environment/AirQualityPM2
 import AirQualityVoc from "../../../components/indoor_environment/AirQualityVoc.vue";
 import {useLoadingStore} from "../../../stores/loading.js";
 import {useSensorsStore} from "../../../stores/sensors.js";
+import {CHART_MAX_POINTS} from "../../../data/ChartFunction.js";
 
 const sensorsData = useSensorsStore()
 
@@ -54,7 +55,7 @@ const handleData = (data) => {
 
 
       if(sensor.source_id !== 'air_quality_voc' && sensor.source_id !== 'water_tank_level'){
-        if(sensorsData.charts[sensor.source_id].length > 10){
+        if(sensorsData.charts[sensor.source_id].length >= CHART_MAX_POINTS){
           sensorsData.charts[sensor.source_id].shift()
           sensorsData.charts[sensor.source_id].push(sensor.value)
         } else {

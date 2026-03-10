@@ -36,6 +36,7 @@ import ThermalLoop from "../../../components/energy_and_global_system/ThermalLoo
 import AirLock from "../../../components/energy_and_global_system/AirLock.vue";
 import {useStreamsStore} from "../../../stores/streams.js";
 import {useLoadingStore} from "../../../stores/loading.js";
+import {CHART_MAX_POINTS} from "../../../data/ChartFunction.js";
 
 const { t } = useI18n()
 const status = ref('idle')
@@ -77,7 +78,7 @@ onMounted(() => {
       const currentMetricChart = sourceCharts[evt.metric]
       if (Array.isArray(currentMetricChart)) {
         const nextSeries = [...currentMetricChart, normalizedValue]
-        if (nextSeries.length > 11) nextSeries.shift()
+        if (nextSeries.length > CHART_MAX_POINTS) nextSeries.shift()
 
         stream.charts[evt.source_id] = {
           ...sourceCharts,
