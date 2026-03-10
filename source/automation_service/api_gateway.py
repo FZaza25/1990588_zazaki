@@ -4,6 +4,7 @@ import redis, json, uvicorn, asyncio, requests
 from persistence_layer import get_db_connection
 from datetime import datetime
 from decimal import Decimal
+from fastapi.responses import RedirectResponse
 
 app = FastAPI(title="Mars Habitat API Gateway - Final Merged")
 
@@ -198,6 +199,10 @@ async def websocket_telemetry(websocket: WebSocket):
             await asyncio.sleep(0.01)
     except: pass
     finally: pubsub.unsubscribe()
+
+@app.get("/", include_in_schema=False)  #Aggiunta per visualizzare in localhost 8000
+def root():
+    return RedirectResponse(url="/docs")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

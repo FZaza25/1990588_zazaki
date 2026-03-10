@@ -1,3 +1,17 @@
+### How to run the system
+
+1. One‑time prerequisite (provided by exam):
+   docker load -i mars-iot-simulator-oci.tar
+
+2. Start full stack:
+   docker compose up --build
+
+Simulator: http://localhost:8080
+API Gateway: http://localhost:8000 (REST + WS)
+Dashboard: http://localhost:3000
+
+
+
 # SYSTEM DESCRIPTION:
 
 Mars Habitat Automation System is an IoT platform for automated control of a simulated Martian habitat.
@@ -181,7 +195,8 @@ US-05, US-10
 6379:6379
 
 ### DESCRIPTION:
-Stores last sensor values and broadcasts update events.
+Stores latest sensor and metric values in Redis keys (`sensor:*`) and broadcasts telemetry events on pub/sub channels. 
+The API Gateway reads these keys via `/api/state` to expose the current snapshot to the frontend.
 
 ### PERSISTENCE EVALUATION
 Primarily in-memory; no explicit durable persistence configured.
@@ -214,14 +229,16 @@ US-05, US-06, US-07, US-08, US-10, US-12, US-13
 
 ### DESCRIPTION:
 Handles rule CRUD, actuator management, and websocket telemetry forwarding.
+Manual actuator commands are first persisted in PostgreSQL and then forwarded to the simulator; if the simulator is unreachable, the DB state remains updated and the error is logged.
+
 
 ### PERSISTENCE EVALUATION
 No direct persistence; delegates persistence to PostgreSQL and state reads to Redis.
 
 ### EXTERNAL SERVICES CONNECTIONS
-- PostgreSQL (`mars_postgres`)
-- Redis (`mars_redis`)
-- Simulator (`simulator:8080`) for manual actuator status command forwarding
+- PostgreSQL (service: mars_db, container: mars_postgres)
+- Redis (service: state_store, container: mars_redis)
+- Simulator (service: simulator, base URL: http://simulator:8080)
 
 ### MICROSERVICES:
 
@@ -267,10 +284,10 @@ Implements automatic behavior and respects actuator mode (AUTO vs MANUAL).
 No local persistence; reads rules from PostgreSQL and state interactions through Redis/simulator.
 
 ### EXTERNAL SERVICES CONNECTIONS
-- Kafka (`kafka:9092`)
-- PostgreSQL (`mars_postgres`)
-- Redis (`mars_redis`)
-- Simulator (`simulator:8080`)
+- Kafka (service: kafka, bootstrap: kafka:9092)
+- PostgreSQL (service: mars_db)
+- Redis (service: state_store)
+- Simulator (service: simulator, base URL: http://simulator:8080)
 
 ### MICROSERVICES:
 
@@ -326,7 +343,7 @@ SPA with route-based views and shared component/store architecture.
 
 	| Name | Description | Related Microservice | User Stories |
 	| ---- | ----------- | -------------------- | ------------ |
-	| Home | Login/entry screen | api_gateway | US-15 |
+	| Home | Landing / entry screen della dashboard | api_gateway | US-15 |
 	| Monitoring / Indoor Environment | Sensor cards and historical charts for indoor sensors | api_gateway | US-10 |
 	| Monitoring / Water System | Sensor cards and historical charts for water/hydroponic sensors | api_gateway | US-10 |
 	| Monitoring / Energy and Global Systems | Stream cards and telemetry charts | api_gateway | US-11 |
