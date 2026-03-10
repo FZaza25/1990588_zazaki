@@ -1,6 +1,9 @@
 <template>
   <div class="actuators-table">
-    <h2>{{ t('actuators.'+props?.items[0]?.actuator_name) }}</h2>
+    <div class="d-flex">
+      <h2>{{ t('actuators.'+props?.items[0]?.actuator_name) }}</h2>
+    </div>
+
     <v-data-table
         :headers="props.header"
         :items="props.items"

@@ -1,19 +1,16 @@
 <template>
-  <div>
-    <CoolingFanTable :header="headers" :items="tables.cooling_fan"/>
-    <HabitatHeaterTable :header="headers" :items="tables.habitat_heater" />
-    <EntranceHumidifierTable :header="headers" :items="tables.entrance_humidifier" />
-    <HallVentilationTable :header="headers" :items="tables.hall_ventilation" />
+  <div class="tables-wrapper">
+    <ActuatorsTable :header="headers" :items="tables.cooling_fan"/>
+    <ActuatorsTable :header="headers" :items="tables.habitat_heater" />
+    <ActuatorsTable :header="headers" :items="tables.entrance_humidifier" />
+    <ActuatorsTable :header="headers" :items="tables.hall_ventilation" />
   </div>
 </template>
 
 <script setup>
 import {onMounted, ref} from "vue";
 import {api} from "../../../api/Request.js";
-import CoolingFanTable from "../../../components/actuators/CoolingFanTable.vue";
-import HabitatHeaterTable from "../../../components/actuators/HabitatHeaterTable.vue";
-import EntranceHumidifierTable from "../../../components/actuators/EntranceHumidifierTable.vue";
-import HallVentilationTable from "../../../components/actuators/HallVentilationTable.vue";
+import ActuatorsTable from "../../../components/actuators/ActuatorsTable.vue";
 
 const tables = ref({
   cooling_fan: [],
@@ -27,6 +24,7 @@ const headers = [
   { title: "Operator", key: "operator" },
   { title: "Threshold", key: "threshold_value" },
   { title: "Target State", key: "target_state" },
+  { title: "Actions", key: "actions" }
 ]
 
 function distributeRulesByActuator(rules = []) {
